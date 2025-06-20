@@ -1,4 +1,7 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const mailSender = require('../utils/mailSender');
+
 
 const orderSchema = mongoose.Schema({
       user: {
