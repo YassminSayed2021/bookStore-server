@@ -1,0 +1,24 @@
+const {Router} = require("express");
+
+const router = Router();
+
+const {User} = require("../models/usersModel");
+
+const authController = require("../controllers/authController");
+
+const { emailValidation, passwordValidation, firstNameValidation,lastNameValidation,passwordConfirm, emailloginValidation} = require("../middlewares/authValidation");
+
+//register
+router.post("/register",firstNameValidation,lastNameValidation,emailValidation,passwordValidation,passwordConfirm,authController.register);
+
+//login 
+router.post("/login",emailloginValidation,passwordValidation,authController.login);
+
+
+
+router.post('/requestPasswordReset', authController.requestPasswordReset);
+
+router.post('/resetPassword', authController.resetPassword);
+
+
+module.exports = router;

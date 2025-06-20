@@ -1,4 +1,4 @@
-// const User = require("../models/usersModel");
+ const User = require("../models/usersModel");
 
 
 // const createUser = async (req, res) => {
@@ -30,4 +30,15 @@
 //   }
 // };
 
-// module.exports = {createUser}
+
+const getAllUsers = async (req, res) => {
+  const users = await User.find({}, { name: 1, email: 1 });
+
+  res.status(200).json({
+    status: "Success",
+    message: "Users fetched successfully",
+    data: users,
+  });
+};
+
+ module.exports = {getAllUsers};

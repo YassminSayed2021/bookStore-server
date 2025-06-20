@@ -11,9 +11,15 @@ app.use(morgan("dev"));
 app.use(cors());
 
 const userRoutes = require("./routes/usersRoutes");
+const authRoutes = require("./routes/authRoutes")
+const otpRoutes = require("./routes/otpRoutes")
+
 
 //routes
-//app.use("/api/users", userRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/otp",otpRoutes);
+
 
 const PORT = process.env.DB_PORT || 3000;
 //const host = process.env.HOST || "localhost";
