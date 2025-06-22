@@ -1,3 +1,5 @@
+require("dotenv").config(); 
+
 const express = require("express");
 const connectDB = require("./config/database");
 const morgan = require("morgan");
@@ -28,4 +30,6 @@ app.listen(PORT,async () => {
   console.log(`Server running on port ${PORT}`);
   await connectDB();
 });
+
+
 

@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const {Router} = require("express");
 
 const router = Router();
@@ -5,6 +7,7 @@ const router = Router();
 const {User} = require("../models/usersModel");
 
 const authController = require("../controllers/authController");
+
 
 const { emailValidation, passwordValidation, firstNameValidation,lastNameValidation,passwordConfirm, emailloginValidation} = require("../middlewares/authValidation");
 
