@@ -1,3 +1,5 @@
+require('dotenv').config(); 
+
 const {validationResult} = require("express-validator");
 const User = require("../models/usersModel");
 const bcrypt = require("bcrypt");
@@ -8,7 +10,7 @@ const sendResetPasswordEmail = require('../utils/sendResetPasswordEmail');
 
 
 
-require('dotenv').config(); 
+
 
 
 
