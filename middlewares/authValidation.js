@@ -33,7 +33,11 @@ const passwordConfirm = body("confirmPassword").custom((value,{req})=>{
     return true;
 })
 
+const oldpasswordValidation = body("oldPassword").isLength({min:8,max:16}).optional().withMessage("password must be between 8-16");
+const newpasswordValidation = body("newPassword").isLength({min:8,max:16}).optional().withMessage("password must be between 8-16");
+
+
 module.exports={
-    emailValidation, passwordValidation, firstNameValidation,lastNameValidation,passwordConfirm,emailloginValidation
+    emailValidation, passwordValidation, firstNameValidation,lastNameValidation,passwordConfirm,emailloginValidation,oldpasswordValidation,newpasswordValidation
 }
 
