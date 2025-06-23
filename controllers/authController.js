@@ -239,6 +239,16 @@ const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
 
+    const errors = validationResult(req);
+if(!errors.isEmpty()){
+    return res.status(400).json({
+            status: "Failure",
+        message: errors.array(),
+
+    });
+} 
+
+
     const recentOtp = await OTP.findOne({ email, type: "reset" }).sort({ createdAt: -1 });
     if (!recentOtp) {
       return res.status(400).json({ success: false, message: "No OTP found for this email." });
