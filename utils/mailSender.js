@@ -10,7 +10,7 @@ const mailSender = async (email, title, body) => {
       }
     });
     let info = await transporter.sendMail({
-    from: '"Book Store 📚" <yassmin.sayed868@gmail.com>',
+    from: '"Book Shelf 📚" <yassmin.sayed868@gmail.com>',
       to: email,
       subject: title,
       html: body,
