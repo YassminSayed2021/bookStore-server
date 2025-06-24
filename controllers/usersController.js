@@ -66,16 +66,21 @@ if (updates.hasOwnProperty("lastName")) {
   }
 }
 
+if (updates.newPassword) {
 
-   if (updates.oldPassword && updates.newPassword) {
-      const isMatch = await bcrypt.compare(updates.oldPassword, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Old password is incorrect" });
-      }
+  if (!updates.oldPassword) {
+    return res.status(400).json({ message: "Old password is required to set a new password" });
+  }
 
-      const salt = await bcrypt.genSalt(Number(process.env.SALT_ROUNDS));
-      user.password = await bcrypt.hash(updates.newPassword, salt);
-    }
+  const isMatch = await bcrypt.compare(updates.oldPassword, user.password);
+  if (!isMatch) {
+    return res.status(400).json({ message: "Old password is incorrect" });
+  }
+
+  const salt = await bcrypt.genSalt(Number(process.env.SALT_ROUNDS));
+  user.password = await bcrypt.hash(updates.newPassword, salt);
+}
+
 
         if (updates.email && updates.email !== email) {
       return res.status(400).json({ message: "Email change not allowed" });

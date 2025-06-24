@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const slugify = require("slugify");
+
 
 const bookSchema = mongoose.Schema({
     title :{
@@ -24,6 +26,10 @@ const bookSchema = mongoose.Schema({
     image:{
         type:String
     },
+     slug: {
+    type: String,
+    unique: true
+  },
     reviews:[{
 type: mongoose.Schema.Types.ObjectId,
 ref:'Review'
@@ -37,6 +43,15 @@ ref:'Review'
 
     
 }, { timestamps: true });
+
+
+bookSchema.pre("save", function (next) {
+  if (this.isModified("title")) {
+    this.slug = slugify(this.title, { lower: true });
+  }
+  next();
+});
+
 
 const Book = mongoose.model("Book", bookSchema);
 module.exports = Book;
