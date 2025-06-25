@@ -22,7 +22,9 @@ const errors = validationResult(req);
 if(!errors.isEmpty()){
     return res.status(400).json({
             status: "Failure",
-        message: errors.array(),
+       // message: errors.array(),
+               message: errors.array()[0].msg
+
 
     });
 } 
@@ -62,7 +64,8 @@ const errors = validationResult(req);
 if(!errors.isEmpty()){
     return res.status(400).json({
             status: "Failure",
-        message: errors.array(),
+        //message: errors.array(),
+        message: errors.array()[0].msg
 
     });
 } 

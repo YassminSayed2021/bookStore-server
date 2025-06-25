@@ -88,7 +88,9 @@ const submitReview = async(req, res)=>{
     return res.status(400).json({
       status: "Failure",
       message: "Validation Error",
-      errors: errors.array(), 
+      //errors: errors.array(), 
+    message: errors.array()[0].msg
+
     });
   }
 
@@ -170,7 +172,9 @@ const updateReview = async(req,res)=>{
     return res.status(400).json({
       status: "Failure",
       message: "Validation Error",
-      errors: errors.array(),
+      //errors: errors.array(),
+                     message: errors.array()[0].msg
+
     });
   }
 try{
