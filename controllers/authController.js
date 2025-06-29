@@ -44,6 +44,7 @@ if(!errors.isEmpty()){
 
     await OTP.create({ email, otp });
 
+
     res.status(200).json({
       success: true,
       message: 'OTP sent to your email. Please confirm to complete registration.',

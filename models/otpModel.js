@@ -19,7 +19,7 @@ const otpSchema = new mongoose.Schema({
   },
   type: {
   type: String,
-  enum: ["register", "reset", "2fa"],
+  enum: ["register", "reset"],
   default: "register"
 },
 
@@ -42,7 +42,7 @@ otpSchema.pre("save", async function (next) {
   this.otp = await bcrypt.hash(this.otp, salt);
 
 //   if (this.type === 'register') {
-    const sendVerificationEmail = require('../utils/sendVerificationEmail');
+     const sendVerificationEmail = require('../utils/sendVerificationEmail');
     await sendVerificationEmail(this.email, plainOtp);
     console.log("Verification OTP email sent.");
   } else {
