@@ -1,6 +1,7 @@
 const OTP = require('../models/otpModel');
 const User = require('../models/usersModel');
 const bcrypt = require("bcrypt");
+const welcomeEmail = require("../utils/welcomeEmail"); 
 
 const verifyOTP = async (req, res) => {
   try {
@@ -31,6 +32,9 @@ const hashedPassword = await bcrypt.hash(password, saltRounds);
       email,
       password: hashedPassword,
     });
+
+    await welcomeEmail(newUser.email, newUser.firstName);
+
 
     await OTP.deleteMany({ email }); 
 
