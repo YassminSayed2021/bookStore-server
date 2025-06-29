@@ -11,6 +11,10 @@ const bookSchema = mongoose.Schema({
     author:{
          type: String
     },
+      authorDescription: {
+    type: String
+  },
+
     price:{
         type: Number,
         required: true,
@@ -20,8 +24,9 @@ const bookSchema = mongoose.Schema({
          type: String
     },
     stock:{
-        type: Number,
-        default: 0
+    ar: { type: Number, default: 0 },
+    en: { type: Number, default: 0 },
+    fr: { type: Number, default: 0 },
     },
     image:{
         type:String
