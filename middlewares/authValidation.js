@@ -19,7 +19,16 @@ const emailloginValidation = body("email").isEmail().withMessage("Please Enter A
 
 
   
-const passwordValidation = body("password").isLength({min:8,max:16}).withMessage("password must be between 8-16");
+const passwordValidation = body("password").isLength({min:8,max:16}).withMessage("password must be between 8-16").matches(/^(?=.*[a-z])/)
+  .withMessage("Password must contain at least one lowercase letter")
+  .matches(/^(?=.*[A-Z])/)
+  .withMessage("Password must contain at least one uppercase letter")
+  .matches(/^(?=.*\d)/)
+  .withMessage("Password must contain at least one number")
+  .matches(/^(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?])/)
+  .withMessage("Password must contain at least one special character");
+
+
 
 const firstNameValidation = body("firstName").trim().escape().isString().notEmpty().withMessage("Please Enter A Valid Name");
 const lastNameValidation = body("lastName").trim().escape().isString().withMessage("Please Enter A Valid Name");
@@ -34,7 +43,16 @@ const passwordConfirm = body("confirmPassword").custom((value,{req})=>{
 })
 
 const oldpasswordValidation = body("oldPassword").isLength({min:8,max:16}).optional().withMessage("password must be between 8-16");
-const newpasswordValidation = body("newPassword").isLength({min:8,max:16}).optional().withMessage("password must be between 8-16");
+const newpasswordValidation = body("newPassword").isLength({min:8,max:16}).optional().withMessage("password must be between 8-16")  .matches(/^(?=.*[a-z])/)
+  .withMessage("Password must contain at least one lowercase letter")
+  .matches(/^(?=.*[A-Z])/)
+  .withMessage("Password must contain at least one uppercase letter")
+  .matches(/^(?=.*\d)/)
+  .withMessage("Password must contain at least one number")
+  .matches(/^(?=.*[!@#$%^&*()_\-+=\[\]{};':"\\|,.<>/?])/)
+  .withMessage("Password must contain at least one special character");
+
+
 
 
 module.exports={
