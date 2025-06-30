@@ -23,17 +23,14 @@ const otpRoutes = require("./routes/otpRoutes");
 const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 //====================================
-const productRoutes = require("./routes/productRoutes");
+
 mongoose
   .connect(
-    "mongodb+srv://yassminsayed868:WwK39ktVNFzG0oGi@bookstore.zdgm989.mongodb.net/bookStore",
-
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
+    "mongodb+srv://yassminsayed868:WwK39ktVNFzG0oGi@bookstore.zdgm989.mongodb.net/bookStore"
   )
-  .then(() => console.log("MongoDB connected"));
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
 //====================================
 //routes
 app.use("/api/v1/users", userRoutes);
@@ -46,7 +43,6 @@ app.use("/api/cart", cartRoutes);
 /*https://bookly-theme.myshopify.com/*/
 //====================================
 app.use("/api/cloud", uploadRoute);
-app.use("/api/products", productRoutes);
 
 // ===========================
 const PORT = process.env.DB_PORT || 3000;
