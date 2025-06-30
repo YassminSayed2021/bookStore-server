@@ -19,6 +19,7 @@ const authRoutes = require("./routes/authRoutes");
 const otpRoutes = require("./routes/otpRoutes");
 const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+
 //routes
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
@@ -27,7 +28,6 @@ app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
-/*https://bookly-theme.myshopify.com/*/
 //====================================
 
 const PORT = process.env.DB_PORT || 3000;
