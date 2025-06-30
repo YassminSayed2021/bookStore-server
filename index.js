@@ -25,9 +25,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 //====================================
 
 mongoose
-  .connect(
-    "mongodb+srv://yassminsayed868:WwK39ktVNFzG0oGi@bookstore.zdgm989.mongodb.net/bookStore"
-  )
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
