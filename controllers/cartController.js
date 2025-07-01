@@ -14,11 +14,9 @@ const getUserIdFromToken = (authHeader) => {
 };
 
 // =====================================
-
 exports.addToCart = async (req, res) => {
   try {
-    // Accept data from BODY (quick-add) or PARAMS (book page)
-    const { bookId, quantity, language } = req.body || req.params;
+    const { bookId, quantity, language } = req.body;
     const qty = parseInt(quantity, 10) || 1;
     const lang = language || "en";
 
@@ -149,35 +147,34 @@ exports.viewCart = async (req, res) => {
         data: formatted,
       });
     }
+
     // Guest: Fetch from session
-    else {
-      const guestCart = req.session.cart || [];
-      const books = await Book.find({
-        _id: { $in: guestCart.map((item) => item.bookId) },
-      }).lean();
+    const guestCart = req.session.cart || [];
+    const books = await Book.find({
+      _id: { $in: guestCart.map((item) => item.bookId) },
+    }).lean();
 
-      const formatted = guestCart
-        .map((item) => {
-          const book = books.find((b) => b._id.toString() === item.bookId);
-          return book
-            ? {
-                id: `${item.bookId}-${item.language}`, // Composite ID for guest
-                bookId: item.bookId,
-                title: book.title,
-                price: book.price,
-                image: book.image,
-                language: item.language,
-                quantity: item.quantity,
-              }
-            : null;
-        })
-        .filter(Boolean);
+    const formatted = guestCart
+      .map((item) => {
+        const book = books.find((b) => b._id.toString() === item.bookId);
+        return book
+          ? {
+              id: `${item.bookId}-${item.language}`,
+              bookId: item.bookId,
+              title: book.title,
+              price: book.price,
+              image: book.image,
+              language: item.language,
+              quantity: item.quantity,
+            }
+          : null;
+      })
+      .filter(Boolean);
 
-      res.status(200).json({
-        status: "success",
-        data: formatted,
-      });
-    }
+    res.status(200).json({
+      status: "success",
+      data: formatted,
+    });
   } catch (err) {
     res.status(500).json({
       status: "error",
@@ -187,13 +184,11 @@ exports.viewCart = async (req, res) => {
 };
 
 // =====================================
-
 exports.removeFromCart = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.body; // from body now
     const userId = getUserIdFromToken(req.headers.authorization);
 
-    // Logged-in: Delete from DB
     if (userId) {
       const item = await CartItem.findOneAndDelete({
         _id: id,
@@ -205,15 +200,14 @@ exports.removeFromCart = async (req, res) => {
           message: "Item not found.",
         });
       }
-    }
-    // Guest: Delete from session
-    else {
+    } else {
       if (!req.session.cart) {
         return res.status(404).json({
           status: "fail",
           message: "Cart is empty.",
         });
       }
+
       const [bookId, lang] = id.split("-");
       req.session.cart = req.session.cart.filter(
         (item) => !(item.bookId === bookId && item.language === lang)
@@ -232,8 +226,7 @@ exports.removeFromCart = async (req, res) => {
   }
 };
 
-// MERGE GUEST CART IF LOGGED IN
-// ===============================
+// =====================================
 exports.mergeGuestCart = async (req, res) => {
   try {
     const userId = req.user.id;
