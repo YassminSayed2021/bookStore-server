@@ -49,3 +49,5 @@ app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   // await connectDB();
 });
+
+console.log("Mongo URI:", process.env.MONGODB_URI);
