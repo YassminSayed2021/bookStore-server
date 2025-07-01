@@ -17,13 +17,20 @@ const userSchema = mongoose.Schema({
     },
     password:{
         type: String,
-        required: true
+        required: function () {
+    return !this.isGoogleUser;
+        }
     },
     role:{
         type: String,
-        enum: ['user','admin'],
+        enum: ['user','admin','guest'],
         default: 'user'
-    }
+    },
+    isGoogleUser: {
+  type: Boolean,
+  default: false
+}
+
 },{timestamps:true});
 
 const User = mongoose.model("User",userSchema);

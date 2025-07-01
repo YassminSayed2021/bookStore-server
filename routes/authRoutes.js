@@ -17,6 +17,8 @@ router.post("/register",firstNameValidation,lastNameValidation,emailValidation,p
 //login 
 router.post("/login",emailloginValidation,passwordValidation,authController.login);
 
+router.post("/googleLogin",authController.googleLogin);
+
 
 
 router.post('/requestPasswordReset', authController.requestPasswordReset);
