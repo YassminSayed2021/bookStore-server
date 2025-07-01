@@ -16,3 +16,18 @@ exports.getBooks = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+exports.getBookById = async (req, res) => {
+  try {
+    const bookId = req.params.id;
+
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    res.status(200).json(book);
+  } catch (err) {
+    console.error("Failed to fetch book:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
