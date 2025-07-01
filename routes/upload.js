@@ -7,7 +7,7 @@ router.post("/upload", upload.single("image"), (req, res) => {
   const fileBuffer = req.file.buffer;
 
   const stream = cloudinary.uploader.upload_stream(
-    { folder: "bookStore" }, // optional: place images in a folder
+    { folder: "bookStore" },
     (error, result) => {
       if (error) {
         console.error("Upload error:", error);

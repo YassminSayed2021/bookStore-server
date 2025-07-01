@@ -9,7 +9,7 @@ const cartRoutes = require("./routes/cartRoutes");
 //====================================
 const uploadRoute = require("./routes/upload");
 const mongoose = require("mongoose");
-
+const bookManagementRoute = require("./routes/bookManagementRoutes");
 // ===============================================
 const app = express();
 
@@ -38,9 +38,9 @@ app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
-/*https://bookly-theme.myshopify.com/*/
 //====================================
 app.use("/api/cloud", uploadRoute);
+app.use("/api/v1/booksmang", bookManagementRoute);
 
 // ===========================
 const PORT = process.env.DB_PORT || 3000;
@@ -50,3 +50,5 @@ app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   // await connectDB();
 });
+
+console.log("Mongo URI:", process.env.MONGODB_URI);
