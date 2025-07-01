@@ -38,7 +38,6 @@ app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
-/*https://bookly-theme.myshopify.com/*/
 //====================================
 app.use("/api/cloud", uploadRoute);
 
@@ -50,3 +49,5 @@ app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   // await connectDB();
 });
+
+console.log("Mongo URI:", process.env.MONGODB_URI);
