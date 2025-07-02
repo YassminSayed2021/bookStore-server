@@ -1,6 +1,7 @@
 const Book = require("../models/booksModel");
 const slugify = require("slugify");
 
+// UPDATE BOOK
 const updateBook = async (req, res) => {
   try {
     const { id } = req.params;
@@ -44,6 +45,32 @@ const updateBook = async (req, res) => {
   }
 };
 
+// DELETE BOOK
+const deleteBook = async (req, res) => {
+  try {
+    const deletedBook = await Book.findByIdAndDelete(req.params.id);
+
+    if (!deletedBook) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Book not found.",
+      });
+    }
+
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  } catch (err) {
+    console.error("DELETE failed:", err);
+    res.status(500).json({
+      status: "error",
+      message: "Server error.",
+    });
+  }
+};
+
 module.exports = {
   updateBook,
+  deleteBook,
 };

@@ -9,9 +9,13 @@ const { admin } = require("../middlewares/admin");
 //   createBook,
 // } = require("../controllers/bookManagementController");
 // 68631cb68895ed417fe2ce8d
-const { updateBook } = require("../controllers/bookManagementController");
+const {
+  updateBook,
+  deleteBook,
+} = require("../controllers/bookManagementController");
 
 router.put("/:id", verifyToken, admin, updateBook);
+router.delete("/:id", deleteBook);
 // Public route
 // router.get("/", getAllBooks);
 
