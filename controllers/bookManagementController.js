@@ -1,7 +1,7 @@
 const Book = require("../models/booksModel");
 const slugify = require("slugify");
 const cloudinary = require("../utils/cloudinary");
-// UPDATE BOOK
+
 const updateBook = async (req, res) => {
   try {
     const { id } = req.params;
@@ -18,9 +18,23 @@ const updateBook = async (req, res) => {
 
     updatedData.user = req.user.id;
 
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "bookStore" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+
+      updatedData.image = result.secure_url;
+    }
+
     const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {
       new: true,
-      overwrite: true,
       runValidators: true,
     });
 
@@ -34,7 +48,7 @@ const updateBook = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Book updated successfully.",
-      data: { updatedBook },
+      data: updatedBook,
     });
   } catch (error) {
     console.error("PUT update failed:", error);
