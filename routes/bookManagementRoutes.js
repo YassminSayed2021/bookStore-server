@@ -7,14 +7,13 @@ const { admin } = require("../middlewares/admin");
 const {
   getAllBooks,
   createBook,
-} = require("../controllers/bookManagementController");
-const {
   updateBook,
   deleteBook,
 } = require("../controllers/bookManagementController");
 
+
 router.put("/:id", verifyToken, admin, updateBook);
-router.delete("/:id", deleteBook);
+router.delete("/:id", verifyToken, admin, deleteBook);
 
 router.get("/", getAllBooks);
 

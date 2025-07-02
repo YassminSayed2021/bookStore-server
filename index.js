@@ -21,7 +21,7 @@ const authRoutes = require("./routes/authRoutes");
 const otpRoutes = require("./routes/otpRoutes");
 const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
-const bookMang = require("./routes/booksRoutes");
+const bookMang = require("./routes/bookManagementRoutes"); // Changed from booksRoutes to bookManagementRoutes
 //====================================
 
 mongoose

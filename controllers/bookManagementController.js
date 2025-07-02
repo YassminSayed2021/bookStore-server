@@ -2,10 +2,29 @@ const Book = require("../models/booksModel");
 const slugify = require("slugify");
 const cloudinary = require("../utils/cloudinary");
 
-exports.getAllBooks = async (req, res) => {
+const getAllBooks = async (req, res) => {
   try {
-    const books = await Book.find().populate("user", "name");
-    res.status(200).json(books);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Count total books for pagination
+    const totalBooks = await Book.countDocuments();
+    
+    // Get books with pagination
+    const books = await Book.find()
+      .populate("user", "name")
+      .skip(skip)
+      .limit(limit);
+
+    res.status(200).json({
+      status: "success",
+      page,
+      totalPages: Math.ceil(totalBooks / limit),
+      totalItems: totalBooks,
+      results: books.length,
+      data: books
+    });
   } catch (err) {
     res.status(500).json({
       status: "fail",
@@ -15,7 +34,7 @@ exports.getAllBooks = async (req, res) => {
   }
 };
 
-exports.createBook = async (req, res) => {
+const createBook = async (req, res) => {
   try {
     const {
       title,
@@ -90,13 +109,11 @@ const updateBook = async (req, res) => {
     }
 
     updatedData.slug = slugify(updatedData.title, { lower: true });
-
     updatedData.user = req.user.id;
 
     const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {
       new: true,
-      overwrite: true,
-      runValidators: true,
+      runValidators: true
     });
 
     if (!updatedBook) {
@@ -146,6 +163,8 @@ const deleteBook = async (req, res) => {
 };
 
 module.exports = {
+  getAllBooks,
+  createBook,
   updateBook,
   deleteBook,
 };
