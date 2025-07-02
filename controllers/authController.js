@@ -1,39 +1,32 @@
-require('dotenv').config(); 
+require("dotenv").config();
 
-const {validationResult} = require("express-validator");
+const { validationResult } = require("express-validator");
 const User = require("../models/usersModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const OTP = require("../models/otpModel");
-const otpGenerator = require('otp-generator');
-const sendResetPasswordEmail = require('../utils/sendResetPasswordEmail');
+const otpGenerator = require("otp-generator");
+const sendResetPasswordEmail = require("../utils/sendResetPasswordEmail");
 
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-
-
-
-
-
-const register = async ( req , res)=>{
-      try {
+const register = async (req, res) => {
+  try {
     const { firstName, lastName, email, password } = req.body;
 
-const errors = validationResult(req);
-if(!errors.isEmpty()){
-    return res.status(400).json({
-            status: "Failure",
-       // message: errors.array(),
-               message: errors.array()[0].msg
-
-
-    });
-} 
-
-
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "Failure",
+        // message: errors.array(),
+        message: errors.array()[0].msg,
+      });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'Email already registered' });
+      return res.status(400).json({ message: "Email already registered" });
     }
 
     const otp = otpGenerator.generate(6, {
@@ -44,71 +37,67 @@ if(!errors.isEmpty()){
 
     await OTP.create({ email, otp });
 
-
     res.status(200).json({
       success: true,
-      message: 'OTP sent to your email. Please confirm to complete registration.',
-      data: { firstName, lastName, email, password } 
+      message:
+        "OTP sent to your email. Please confirm to complete registration.",
+      data: { firstName, lastName, email, password },
     });
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error', error: error.message });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
-
-
-
-const login = async(req, res)=>{
-    try{
-const{body} = req;
-const errors = validationResult(req);
-if(!errors.isEmpty()){
-    return res.status(400).json({
-            status: "Failure",
+const login = async (req, res) => {
+  try {
+    const { body } = req;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "Failure",
         //message: errors.array(),
-        message: errors.array()[0].msg
+        message: errors.array()[0].msg,
+      });
+    }
 
-    });
-} 
-
-
- 
     const user = await User.findOne({ email: body.email });
     if (!user) {
-      return res.status(400).json({ message: "Email or Password are not valid" });
+      return res
+        .status(400)
+        .json({ message: "Email or Password are not valid" });
     }
 
     const isMatch = await bcrypt.compare(body.password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Email or Password are not valid" });
+      return res
+        .status(400)
+        .json({ message: "Email or Password are not valid" });
     }
     const token = generateAccessToken({
-    name: user.name,
-    email: user.email,
-    role: user.role,
-});
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
 
     return res.status(200).json({
       status: "Success",
       message: "Logged in successfully",
       token: token,
     });
-
-}catch(err){
+  } catch (err) {
     return res.status(500).json({
       status: "Failure",
       message: "Internal server error",
-      error : err.message
+      error: err.message,
     });
-
-}
-}
- const generateAccessToken = (userData) =>{
-return jwt.sign(userData,process.env.TOKEN_SECRET, {expiresIn:"1800s"})
-}   
-
-
-
+  }
+};
+const generateAccessToken = (userData) => {
+  return jwt.sign(userData, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
+};
 
 // export const requestPasswordReset = async (req, res, next) => {
 //   const { email } = req.body;
@@ -146,10 +135,7 @@ return jwt.sign(userData,process.env.TOKEN_SECRET, {expiresIn:"1800s"})
 //   } catch (error) {
 //     res.status(500).json({ message: 'Something went wrong' });
 //   }
-// }; 
-
-
-
+// };
 
 const requestPasswordReset = async (req, res) => {
   try {
@@ -158,13 +144,22 @@ const requestPasswordReset = async (req, res) => {
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // Prevent spamming
-    const previousOtp = await OTP.findOne({ email, type: "reset" }).sort({ createdAt: -1 });
+    const previousOtp = await OTP.findOne({ email, type: "reset" }).sort({
+      createdAt: -1,
+    });
     if (previousOtp && Date.now() - previousOtp.createdAt < 60 * 1000) {
-      return res.status(429).json({ success: false, message: "Please wait before requesting another OTP." });
+      return res
+        .status(429)
+        .json({
+          success: false,
+          message: "Please wait before requesting another OTP.",
+        });
     }
 
     // Generate and hash OTP
@@ -187,17 +182,17 @@ const requestPasswordReset = async (req, res) => {
       success: true,
       message: "OTP sent to your email for password reset",
     });
-
   } catch (error) {
     console.error("Error in requestPasswordReset:", error.message);
-    res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
   }
 };
-
-
-
-
-
 
 //
 
@@ -213,8 +208,6 @@ const requestPasswordReset = async (req, res) => {
 
 //     const secret = process.env.JWT + user.password;
 
-
-
 //     const verify = jwt.verify(token, secret);
 //     const encryptedPassword = await bcrypt.hash(password, 10);
 //     await User.updateOne(
@@ -228,7 +221,6 @@ const requestPasswordReset = async (req, res) => {
 //       }
 //     );
 
-
 //     await user.save();
 
 //     res.status(200).json({ message: 'Password has been reset' });
@@ -238,29 +230,33 @@ const requestPasswordReset = async (req, res) => {
 //   }
 //};
 
-
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
 
     const errors = validationResult(req);
-if(!errors.isEmpty()){
-    return res.status(400).json({
-            status: "Failure",
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "Failure",
         message: errors.array(),
-
-    });
-} 
-
-
-    const recentOtp = await OTP.findOne({ email, type: "reset" }).sort({ createdAt: -1 });
-    if (!recentOtp) {
-      return res.status(400).json({ success: false, message: "No OTP found for this email." });
+      });
     }
 
-    const isExpired = recentOtp.createdAt.getTime() + 5 * 60 * 1000 < Date.now();
+    const recentOtp = await OTP.findOne({ email, type: "reset" }).sort({
+      createdAt: -1,
+    });
+    if (!recentOtp) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No OTP found for this email." });
+    }
+
+    const isExpired =
+      recentOtp.createdAt.getTime() + 5 * 60 * 1000 < Date.now();
     if (isExpired) {
-      return res.status(400).json({ success: false, message: "OTP has expired." });
+      return res
+        .status(400)
+        .json({ success: false, message: "OTP has expired." });
     }
 
     const isValid = await bcrypt.compare(otp, recentOtp.otp);
@@ -270,7 +266,9 @@ if(!errors.isEmpty()){
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const salt = await bcrypt.genSalt(Number(process.env.SALT_ROUNDS));
@@ -293,5 +291,68 @@ if(!errors.isEmpty()){
   }
 };
 
+const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
 
-module.exports={register,login,requestPasswordReset,resetPassword};
+    console.log("Received token:", token);
+    console.log("Client ID from .env:", process.env.GOOGLE_CLIENT_ID);
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    console.log("Decoded payload:", payload);
+
+    const { email, given_name: firstName, family_name: lastName } = payload;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email not found in token" });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        email,
+        firstName: firstName || "GoogleUser",
+        lastName: lastName || "",
+        password: "", // لا تستخدمه لتسجيل دخول عادي
+        isGoogleUser: true,
+      });
+    }
+
+    const tokenRes = jwt.sign({ id: user._id }, process.env.TOKEN_SECRET, {
+      expiresIn: "1800s",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      token: tokenRes,
+      user,
+    });
+  } catch (error) {
+    console.error("Google login error:", error.message);
+    console.error(error.stack);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Google login failed",
+        error: error.message,
+      });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  requestPasswordReset,
+  resetPassword,
+  googleLogin,
+};

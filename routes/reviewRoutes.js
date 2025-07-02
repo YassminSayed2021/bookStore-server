@@ -5,7 +5,7 @@ const {ratingValidation,reviewTextValidation} = require('../middlewares/reviewVa
 const { verifyToken } = require("../middlewares/verifyToken");
 
 router.get("/",reviewController.getReviews);
-router.get("/:slug",verifyToken,reviewController.getBookReviews);
+router.get("/:slug",reviewController.getBookReviews);
  router.post("/:slug",verifyToken,ratingValidation,reviewTextValidation,reviewController.submitReview);
  router.patch("/:slug",verifyToken,ratingValidation.optional(),reviewTextValidation.optional(),reviewController.updateReview);
  router.delete("/:slug",verifyToken,reviewController.deleteReview);

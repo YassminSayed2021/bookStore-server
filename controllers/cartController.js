@@ -1,82 +1,193 @@
-const cart = require("../models/cartModel");
+const jwt = require("jsonwebtoken");
+const CartItem = require("../models/cartModel");
+const Book = require("../models/booksModel");
 
-exports.viewCart = (req, res) => {
-  res.status(200).json({
-    status: "success",
-    results: cart.length,
-    data: { cart },
-  });
+const getUserIdFromToken = (authHeader) => {
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.split(" ")[1];
+  try {
+    return jwt.verify(token, process.env.TOKEN_SECRET).id;
+  } catch {
+    return null;
+  }
 };
 
-//===========================================
+// =====================================
+exports.addToCart = async (req, res) => {
+  try {
+    const { bookId, quantity, language } = req.body;
+    const qty = parseInt(quantity, 10) || 1;
+    const lang = language || "en";
 
-exports.addToCart = (req, res) => {
-  const quantity = req.body.quantity || 1;
-  const itemId = req.body.id;
-  const existingItem = cart.find((item) => item.id === itemId);
-
-  if (existingItem) {
-    const newTotalQuantity = existingItem.quantity + quantity;
-
-    const isAvailable = checkStockAvailability(existingItem, newTotalQuantity);
-    if (!isAvailable) {
+    if (!bookId) {
       return res.status(400).json({
         status: "fail",
-        message: `Only ${existingItem.stock} items in stock.`,
+        message: "Book ID is required.",
       });
     }
 
-    existingItem.quantity = newTotalQuantity;
+    const userId = getUserIdFromToken(req.headers.authorization);
+    if (!userId) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Authentication required.",
+      });
+    }
 
-    return res.status(201).json({
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Book not found.",
+      });
+    }
+
+    const stock = book.stock?.[lang];
+    if (stock === undefined) {
+      return res.status(400).json({
+        status: "fail",
+        message: `Language '${lang}' not available.`,
+      });
+    }
+
+    if (qty > stock) {
+      return res.status(400).json({
+        status: "fail",
+        message: `Only ${stock} items in stock.`,
+      });
+    }
+
+    const existing = await CartItem.findOne({
+      book: bookId,
+      user: userId,
+      language: lang,
+    });
+
+    if (existing) {
+      const newQty = existing.quantity + qty;
+      if (newQty > stock) {
+        return res.status(400).json({
+          status: "fail",
+          message: `Only ${stock} in stock.`,
+        });
+      }
+      existing.quantity = newQty;
+      await existing.save();
+    } else {
+      await CartItem.create({
+        book: bookId,
+        quantity: qty,
+        language: lang,
+        user: userId,
+      });
+    }
+
+    res.status(200).json({
       status: "success",
-      message: "Quantity updated in cart",
-      data: { cart },
+      message: "Added to your cart!",
+      data: {
+        book,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
     });
   }
+};
 
-  const isAvailable = checkStockAvailability(req.body, quantity);
-  if (!isAvailable) {
-    return res.status(400).json({
-      status: "fail",
-      message: `Only ${req.body.stock} items in stock.`,
+// =====================================
+exports.viewCart = async (req, res) => {
+  try {
+    const userId = getUserIdFromToken(req.headers.authorization);
+    if (!userId) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Authentication required.",
+      });
+    }
+
+    const cartItems = await CartItem.find({ user: userId }).populate("book");
+    const formatted = cartItems.map((item) => ({
+      id: item._id,
+      bookId: item.book._id,
+      title: item.book.title,
+      price: item.book.price,
+      image: item.book.image,
+      language: item.language,
+      quantity: item.quantity,
+    }));
+
+    return res.status(200).json({
+      status: "success",
+      data: formatted,
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
     });
   }
-
-  const newCartItem = Object.assign({}, req.body, { quantity });
-  cart.push(newCartItem);
-
-  return res.status(201).json({
-    status: "success",
-    message: "Item added to cart",
-    data: { cart },
-  });
 };
 
-const checkStockAvailability = (item, quantityToAdd) => {
-  return quantityToAdd <= item.stock;
-};
+// =====================================
+exports.removeFromCart = async (req, res) => {
+  try {
+    const { id } = req.body;
+    const userId = getUserIdFromToken(req.headers.authorization);
+    if (!userId) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Authentication required.",
+      });
+    }
 
-//===========================================
+    const item = await CartItem.findOneAndDelete({
+      _id: id,
+      user: userId,
+    });
 
-exports.removeFromCart = (req, res) => {
-  const itemId = req.params.id * 1;
+    if (!item) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Item not found.",
+      });
+    }
 
-  const index = cart.findIndex((item) => item.id === itemId);
-
-  if (index === -1) {
-    return res.status(404).json({
-      status: "fail",
-      message: "Item not found in cart",
+    res.status(200).json({
+      status: "success",
+      message: "Item removed.",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
     });
   }
-
-  cart.splice(index, 1);
-  res.status(200).json({
-    status: "success",
-    message: "Item removed from cart",
-    data: { cart },
-  });
 };
 
-//===========================================
+// =====================================
+exports.clearCart = async (req, res) => {
+  try {
+    const userId = getUserIdFromToken(req.headers.authorization);
+    if (!userId) {
+      return res.status(401).json({
+        status: "fail",
+        message: "Authentication required.",
+      });
+    }
+
+    await CartItem.deleteMany({ user: userId });
+
+    res.status(200).json({
+      status: "success",
+      message: "Your cart has been cleared.",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
+  }
+};
