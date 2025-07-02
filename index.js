@@ -21,7 +21,8 @@ const authRoutes = require("./routes/authRoutes");
 const otpRoutes = require("./routes/otpRoutes");
 const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
-const bookMang = require("./routes/booksRoutes");
+const bookMang = require("./routes/bookManagementRoutes"); // Changed from booksRoutes to bookManagementRoutes
+const adminRoutes = require("./routes/adminRoutes");
 //====================================
 
 mongoose
@@ -37,6 +38,7 @@ app.use("/api/v1/otp", otpRoutes);
 app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
 app.use("/api/v1/bookmang", bookMang);
+app.use("/api/v1/admin", adminRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
 //====================================
