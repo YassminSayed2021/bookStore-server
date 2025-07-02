@@ -19,30 +19,20 @@ const {
 } = require("../middlewares/authValidation");
 
 //register
-router.post(
-  "/register",
-  firstNameValidation,
-  lastNameValidation,
-  emailValidation,
-  passwordValidation,
-  passwordConfirm,
-  authController.register
-);
+router.post("/register",firstNameValidation,lastNameValidation,emailValidation,passwordValidation,passwordConfirm,authController.register);
 
-//login
-router.post(
-  "/login",
-  emailloginValidation,
-  passwordValidation,
-  authController.login
-);
+//login 
+router.post("/login",emailloginValidation,passwordValidation,authController.login);
 
-router.post("/requestPasswordReset", authController.requestPasswordReset);
+router.post("/googleLogin",authController.googleLogin);
 
-router.post(
-  "/resetPassword",
-  newpasswordValidation,
-  authController.resetPassword
-);
+
+
+router.post('/requestPasswordReset', authController.requestPasswordReset);
+
+router.post('/resetPassword',newpasswordValidation, authController.resetPassword);
+
+
+
 
 module.exports = router;

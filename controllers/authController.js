@@ -8,6 +8,11 @@ const OTP = require("../models/otpModel");
 const otpGenerator = require('otp-generator');
 const sendResetPasswordEmail = require('../utils/sendResetPasswordEmail');
 
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+
+
 
 
 
@@ -294,4 +299,56 @@ if(!errors.isEmpty()){
 };
 
 
-module.exports={register,login,requestPasswordReset,resetPassword};
+const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    console.log("Received token:", token);
+    console.log("Client ID from .env:", process.env.GOOGLE_CLIENT_ID);
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    console.log("Decoded payload:", payload);
+
+    const { email, given_name: firstName, family_name: lastName } = payload;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email not found in token" });
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        email,
+        firstName: firstName || "GoogleUser",
+        lastName: lastName || "",
+        password: '', // لا تستخدمه لتسجيل دخول عادي
+        isGoogleUser: true
+      });
+    }
+
+    const tokenRes = jwt.sign({ id: user._id }, process.env.TOKEN_SECRET, {
+      expiresIn: '1800s',
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Google login successful',
+      token: tokenRes,
+      user,
+    });
+
+  } catch (error) {
+    console.error("Google login error:", error.message);
+    console.error(error.stack);
+    res.status(500).json({ success: false, message: 'Google login failed', error: error.message });
+  }
+};
+
+
+module.exports={register,login,requestPasswordReset,resetPassword,googleLogin};
