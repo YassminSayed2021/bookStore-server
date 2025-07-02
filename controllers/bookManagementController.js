@@ -1,6 +1,6 @@
 const Book = require("../models/booksModel");
 const slugify = require("slugify");
-
+const cloudinary = require("../utils/cloudinary");
 // UPDATE BOOK
 const updateBook = async (req, res) => {
   try {
