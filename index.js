@@ -14,7 +14,10 @@ const app = express();
 
 app.use(express.json());
 app.use(morgan("dev"));
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:4200'], 
+  credentials: true
+}));
 
 const userRoutes = require("./routes/usersRoutes");
 const authRoutes = require("./routes/authRoutes");

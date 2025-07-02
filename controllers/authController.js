@@ -321,7 +321,7 @@ const googleLogin = async (req, res) => {
         email,
         firstName: firstName || "GoogleUser",
         lastName: lastName || "",
-        password: "", // لا تستخدمه لتسجيل دخول عادي
+        password: "", 
         isGoogleUser: true,
       });
     }
