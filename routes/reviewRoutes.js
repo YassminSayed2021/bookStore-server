@@ -11,3 +11,4 @@ router.get("/:slug",verifyToken,reviewController.getBookReviews);
  router.delete("/:slug",verifyToken,reviewController.deleteReview);
 
 module.exports = router;
+
