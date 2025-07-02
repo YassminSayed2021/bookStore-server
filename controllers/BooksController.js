@@ -1,5 +1,7 @@
+
 const Book = require("../models/booksModel");
 const Review = require("../models/reviewModel");
+const mongoose = require("mongoose");
 
 exports.getBooks = async (req, res) => {
   try {
@@ -23,32 +25,27 @@ exports.getBooks = async (req, res) => {
   }
 };
 
-
 exports.getBookById = async (req, res) => {
   try {
     const bookId = req.params.id;
+    console.log("ID received:", bookId);
 
-    const book = await Book.findById(bookId).lean();
+    if (!mongoose.Types.ObjectId.isValid(bookId)) {
+      console.log("Invalid ObjectId format");
+      return res.status(400).json({ message: "Invalid book ID" });
+    }
+
+    const book = await Book.findById(bookId);
+    console.log("Book found:", book);
+
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
     }
 
-    
-    const reviews = await Review.find({ book: book._id });
-    const reviewsCount = reviews.length;
-    const averageRating = reviewsCount
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewsCount
-      : 0;
+    res.status(200).json({ data: book });
 
-    res.status(200).json({
-      data: {
-        ...book,
-        reviewsCount,
-        averageRating: Number(averageRating.toFixed(1))
-      }
-    });
   } catch (err) {
-    console.error("Failed to fetch book:", err);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("❌ Error in getBookById:", err.stack); // مهم نطبع stack
+    res.status(500).json({ message: "Server error" });
   }
 };
