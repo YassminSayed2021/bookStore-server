@@ -1,5 +1,4 @@
 require("dotenv").config();
-
 const express = require("express");
 // const connectDB = require("./config/database");
 const morgan = require("morgan");
@@ -22,6 +21,7 @@ const authRoutes = require("./routes/authRoutes");
 const otpRoutes = require("./routes/otpRoutes");
 const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const bookMang = require("./routes/booksRoutes");
 //====================================
 
 mongoose
@@ -36,6 +36,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/otp", otpRoutes);
 app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
+app.use("/api/v1/bookmang", bookMang);
 //====================================
 app.use("/api/cart", cartRoutes);
 //====================================
@@ -49,5 +50,3 @@ app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   // await connectDB();
 });
-
-console.log("Mongo URI:", process.env.MONGODB_URI);
