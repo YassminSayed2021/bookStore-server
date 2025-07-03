@@ -1,8 +1,7 @@
 require('dotenv').config(); 
- const User = require("../models/usersModel");
- const bcrypt = require("bcrypt");
- const { validationResult } = require("express-validator");
-
+const User = require("../models/usersModel");
+const bcrypt = require("bcrypt");
+const { validationResult } = require("express-validator");
 
 const getAllUsers = async (req, res) => {
   try {
@@ -234,11 +233,72 @@ if (updates.newPassword) {
 }
 }
 
- module.exports = {
+ // Create user (admin)
+const createUser = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: "Failure",
+        message: errors.array()[0].msg
+      });
+    }
+
+    const { firstName, lastName, email, password, role } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        status: "Failure",
+        message: "Email already registered"
+      });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(Number(process.env.SALT_ROUNDS) || 10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = await User.create({
+      firstName,
+      lastName: lastName || undefined,
+      email,
+      password: hashedPassword,
+      role: role || 'user'
+    });
+
+    // Return user without password
+    const userWithoutPassword = {
+      _id: newUser._id,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email,
+      role: newUser.role,
+      createdAt: newUser.createdAt,
+      updatedAt: newUser.updatedAt
+    };
+
+    res.status(201).json({
+      status: "Success",
+      message: "User created successfully",
+      data: userWithoutPassword
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "Failure",
+      message: "Error creating user",
+      error: error.message
+    });
+  }
+};
+
+module.exports = {
   getAllUsers,
   getUserById,
   updateUser,
   deleteUser,
+  createUser,
   getmyProfile,
   updatemyProfile
 };

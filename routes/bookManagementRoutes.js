@@ -12,7 +12,9 @@ const {
 } = require("../controllers/bookManagementController");
 
 
-router.put("/:id", verifyToken, admin, updateBook);
+// router.put("/:id", verifyToken, admin, updateBook);
+router.put("/:id", verifyToken, admin, upload.single("image"), updateBook);
+
 router.delete("/:id", verifyToken, admin, deleteBook);
 
 router.get("/", getAllBooks);
