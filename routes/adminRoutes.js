@@ -8,6 +8,7 @@ const {user} = require ("../middlewares/user")
 // Admin routes
 router.get("/", verifyToken, admin, adminController.getAllUsers);
 router.get("/:id", verifyToken, admin, adminController.getUserById);
+router.post("/", verifyToken, admin, adminController.createUser); // New route for creating users
 router.patch("/:id", verifyToken, admin, adminController.updateUser);
 router.delete("/:id", verifyToken, admin, adminController.deleteUser);
 
