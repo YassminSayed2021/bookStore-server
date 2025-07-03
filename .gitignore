@@ -1,3 +1,7 @@
 node_modules
 .env
 bookvisionai-31c4722c5e79.json
+# Ignore log files
+logs/
+*.log
+*.log.*
