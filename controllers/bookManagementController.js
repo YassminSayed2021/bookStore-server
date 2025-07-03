@@ -77,23 +77,41 @@ exports.createBook = async (req, res) => {
 };
 
 // UPDATE BOOK
-
-const updateBook = async (req, res) => {
+// UPDATE BOOK
+exports.updateBook = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedData = req.body;
 
-    if (!updatedData.title || !updatedData.price) {
-      return res.status(400).json({
-        status: "fail",
-        message: "title and price are required.",
-      });
-    }
+    // Extract fields from the body
+    const {
+      title,
+      category,
+      author,
+      authorDescription,
+      price,
+      description,
+      stockAr,
+      stockEn,
+      stockFr,
+    } = req.body;
 
-    updatedData.slug = slugify(updatedData.title, { lower: true });
+    // Build update data object
+    const updateData = {
+      title,
+      category,
+      author,
+      authorDescription,
+      price,
+      description,
+      stock: {
+        ar: parseInt(stockAr) || 0,
+        en: parseInt(stockEn) || 0,
+        fr: parseInt(stockFr) || 0,
+      },
+      user: req.user.id, // attach logged-in user
+    };
 
-    updatedData.user = req.user.id;
-
+    // If an image was uploaded to Cloudinary, add its URL
     if (req.file) {
       const result = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
@@ -105,13 +123,13 @@ const updateBook = async (req, res) => {
         );
         stream.end(req.file.buffer);
       });
-
-      updatedData.image = result.secure_url;
+      updateData.image = result.secure_url;
     }
 
-    const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {
-      new: true,
-      runValidators: true,
+    // Update the book by ID
+    const updatedBook = await Book.findByIdAndUpdate(id, updateData, {
+      new: true, // return the updated document
+      runValidators: true, // validate before updating
     });
 
     if (!updatedBook) {
@@ -126,17 +144,75 @@ const updateBook = async (req, res) => {
       message: "Book updated successfully.",
       data: updatedBook,
     });
-  } catch (error) {
-    console.error("PUT update failed:", error);
+  } catch (err) {
+    console.error("Update failed:", err);
     res.status(500).json({
-      status: "error",
-      message: "Server error.",
+      status: "fail",
+      message: "Book update failed",
+      error: err.message,
     });
   }
 };
 
+// const updateBook = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updatedData = req.body;
+
+//     if (!updatedData.title || !updatedData.price) {
+//       return res.status(400).json({
+//         status: "fail",
+//         message: "title and price are required.",
+//       });
+//     }
+
+//     updatedData.slug = slugify(updatedData.title, { lower: true });
+
+//     updatedData.user = req.user.id;
+
+//     if (req.file) {
+//       const result = await new Promise((resolve, reject) => {
+//         const stream = cloudinary.uploader.upload_stream(
+//           { folder: "bookStore" },
+//           (error, result) => {
+//             if (error) reject(error);
+//             else resolve(result);
+//           }
+//         );
+//         stream.end(req.file.buffer);
+//       });
+
+//       updatedData.image = result.secure_url;
+//     }
+
+//     const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {
+//       new: true,
+//       runValidators: true,
+//     });
+
+//     if (!updatedBook) {
+//       return res.status(404).json({
+//         status: "fail",
+//         message: "Book not found.",
+//       });
+//     }
+
+//     res.status(200).json({
+//       status: "success",
+//       message: "Book updated successfully.",
+//       data: updatedBook,
+//     });
+//   } catch (error) {
+//     console.error("PUT update failed:", error);
+//     res.status(500).json({
+//       status: "error",
+//       message: "Server error.",
+//     });
+//   }
+// };
+
 // DELETE BOOK
-const deleteBook = async (req, res) => {
+exports.deleteBook = async (req, res) => {
   try {
     const deletedBook = await Book.findByIdAndDelete(req.params.id);
 
@@ -158,9 +234,4 @@ const deleteBook = async (req, res) => {
       message: "Server error.",
     });
   }
-};
-
-module.exports = {
-  updateBook,
-  deleteBook,
 };
