@@ -5,6 +5,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 //====================================
 const cartRoutes = require("./routes/cartRoutes");
+const wishListRoutes = require("./routes/wishListRoutes");
 //====================================
 const uploadRoute = require("./routes/upload");
 const mongoose = require("mongoose");
@@ -42,6 +43,7 @@ app.use("/api/v1/bookmang", bookMang);
 app.use("/api/v1/admin", adminRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
+app.use("/api/wishList", wishListRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
 

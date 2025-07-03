@@ -1,4 +1,3 @@
-
 const Book = require("../models/booksModel");
 const Review = require("../models/reviewModel");
 const mongoose = require("mongoose");
@@ -13,12 +12,12 @@ exports.getBooks = async (req, res) => {
       .limit(parseInt(limit));
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       page: 1,
       totalPages: 1,
       totalItems: books.length,
       results: books.length,
-      data: books // 👈 ده هو المفتاح اللي Angular بتدور عليه
+      data: books,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -43,9 +42,8 @@ exports.getBookById = async (req, res) => {
     }
 
     res.status(200).json({ data: book });
-
   } catch (err) {
-    console.error("❌ Error in getBookById:", err.stack); // مهم نطبع stack
+    console.error("❌ Error in getBookById:", err.stack);
     res.status(500).json({ message: "Server error" });
   }
 };
