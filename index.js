@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-// const connectDB = require("./config/database");
+const connectDB = require("./config/database");
 const morgan = require("morgan");
 const cors = require("cors");
 //====================================
@@ -16,7 +16,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:4200'], 
+  credentials: true
+}));
 
 const userRoutes = require("./routes/usersRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -25,14 +28,7 @@ const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const bookMang = require("./routes/bookManagementRoutes"); // Changed from booksRoutes to bookManagementRoutes
 const adminRoutes = require("./routes/adminRoutes");
-//====================================
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
-
-//====================================
 //routes
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
@@ -53,5 +49,5 @@ const PORT = process.env.DB_PORT || 3000;
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
-  // await connectDB();
+  await connectDB();
 });
