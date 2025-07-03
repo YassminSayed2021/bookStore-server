@@ -4,20 +4,23 @@ const router = express.Router();
 const upload = require("../middlewares/upload");
 const { verifyToken } = require("../middlewares/verifyToken");
 const { admin } = require("../middlewares/admin");
-
 const {
-  updateBook,
-  deleteBook,
   getAllBooks,
   createBook,
+  updateBook,
+  deleteBook,
 } = require("../controllers/bookManagementController");
 
-router.put("/:id", verifyToken, admin, upload.single("image"), updateBook);
+// Create a new book
 router.post("/", verifyToken, admin, upload.single("image"), createBook);
-router.delete("/:id", deleteBook);
 
+// Update a book
+router.put("/:id", verifyToken, admin, upload.single("image"), updateBook);
+
+// Delete a book
+router.delete("/:id", verifyToken, admin, deleteBook);
+
+// Get all books
 router.get("/", getAllBooks);
-
-// Admin only: create new book with image upload
 
 module.exports = router;
