@@ -96,7 +96,7 @@ const login = async (req, res) => {
   }
 };
 const generateAccessToken = (userData) => {
-  return jwt.sign(userData, process.env.TOKEN_SECRET, { expiresIn: "1800s" });
+  return jwt.sign(userData, process.env.TOKEN_SECRET, { expiresIn: "3d" });
 };
 
 // export const requestPasswordReset = async (req, res, next) => {
