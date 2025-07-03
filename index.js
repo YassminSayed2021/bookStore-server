@@ -5,6 +5,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 //====================================
 const cartRoutes = require("./routes/cartRoutes");
+const wishListRoutes = require("./routes/wishListRoutes");
 //====================================
 const uploadRoute = require("./routes/upload");
 const mongoose = require("mongoose");
@@ -13,6 +14,7 @@ const mongoose = require("mongoose");
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(cors({
   origin: ['http://localhost:4200'], 
@@ -24,7 +26,8 @@ const authRoutes = require("./routes/authRoutes");
 const otpRoutes = require("./routes/otpRoutes");
 const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
-const bookMang = require("./routes/booksRoutes");
+const bookMang = require("./routes/bookManagementRoutes"); // Changed from booksRoutes to bookManagementRoutes
+const adminRoutes = require("./routes/adminRoutes");
 //====================================
 
 mongoose
@@ -40,8 +43,10 @@ app.use("/api/v1/otp", otpRoutes);
 app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
 app.use("/api/v1/bookmang", bookMang);
+app.use("/api/v1/admin", adminRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
+app.use("/api/wishList", wishListRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
 
