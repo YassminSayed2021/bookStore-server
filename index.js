@@ -28,6 +28,8 @@ const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const bookMang = require("./routes/bookManagementRoutes"); // Changed from booksRoutes to bookManagementRoutes
 const adminRoutes = require("./routes/adminRoutes");
+const orderRoutes = require("./routes/ordersRoutes");
+const paypalRoutes = require("./routes/paypalRoutes");
 
 //routes
 app.use("/api/v1/users", userRoutes);
@@ -37,6 +39,8 @@ app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
 app.use("/api/v1/bookmang", bookMang);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/orders",orderRoutes);
+app.use("/api/v1/paypal",paypalRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
