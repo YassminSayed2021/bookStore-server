@@ -13,6 +13,11 @@ const mongoose = require("mongoose");
 // ===============================================
 const app = express();
 
+const requestLogger = require('./middlewares/requestLogger');
+const errorHandler = require('./middlewares/errorHandler');
+
+app.use(requestLogger); // Log every request
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
@@ -31,6 +36,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const orderRoutes = require("./routes/ordersRoutes");
 const paypalRoutes = require("./routes/paypalRoutes");
 
+
 //routes
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/auth", authRoutes);
@@ -46,6 +52,8 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
+//====================================
+app.use(errorHandler);
 
 // ===========================
 const PORT = process.env.DB_PORT || 3000;
