@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const CartItem = require("../models/cartModel");
 const Book = require("../models/booksModel");
-const Order = require("../models/orderModel");
+const Order = require("../models/ordersModel");
+const User = require("../models/usersModel");
 const mailSender = require("../utils/mailSender");
 
 const placeOrder = async(req,res)=>{
@@ -30,7 +31,57 @@ const placeOrder = async(req,res)=>{
     let totalPrice = 0;
     const orderBooks = [];
 
-    
+        for (const item of cartItems) {
+      const { book, quantity, language } = item;
+
+      const stock = book.stock?.[language];
+
+            if (stock === undefined) {
+        await session.abortTransaction();
+        return res.status(400).json({
+          status: "Failure",
+          message: `Language '${language}' not available for ${book.title}`,
+        });
+      }
+
+            if (quantity > stock) {
+        await session.abortTransaction();
+        return res.status(400).json({
+          status: "Failure",
+          message: `Only ${stock} left in stock for ${book.title}`,
+        });
+      }
+
+            book.stock[language] -= quantity;
+      await book.save({ session });
+      totalPrice += book.price * quantity;
+orderBooks.push({
+  book: book._id,
+  quantity,
+  language,
+  price: book.price
+});
+    }
+    const newOrder = await Order.create(
+      [
+        {
+          user: user._id,
+          books: orderBooks,
+          totalPrice,
+        },
+      ],
+      { session }
+    );
+    await CartItem.deleteMany({ user: user._id }, { session });
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(201).json({
+      status: "Success",
+      message: "Order placed successfully",
+      data: newOrder[0],
+    });
+
 
 
     }catch(err){
@@ -39,9 +90,11 @@ session.endSession();
     res.status(500).json({
     status: "Failure",
     message:"Internal Server Error",
-    error: err
+  error: err.message || err,
     });
 
     }
 }
+
+module.exports = {placeOrder}
     
