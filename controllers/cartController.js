@@ -1,16 +1,5 @@
-const jwt = require("jsonwebtoken");
 const CartItem = require("../models/cartModel");
 const Book = require("../models/booksModel");
-
-const getUserIdFromToken = (authHeader) => {
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.split(" ")[1];
-  try {
-    return jwt.verify(token, process.env.TOKEN_SECRET).id;
-  } catch {
-    return null;
-  }
-};
 
 // =====================================
 exports.addToCart = async (req, res) => {
@@ -18,19 +7,12 @@ exports.addToCart = async (req, res) => {
     const { bookId, quantity, language } = req.body;
     const qty = parseInt(quantity, 10) || 1;
     const lang = language || "en";
+    const userId = req.user.id;
 
     if (!bookId) {
       return res.status(400).json({
         status: "fail",
         message: "Book ID is required.",
-      });
-    }
-
-    const userId = getUserIdFromToken(req.headers.authorization);
-    if (!userId) {
-      return res.status(401).json({
-        status: "fail",
-        message: "Authentication required.",
       });
     }
 
@@ -84,10 +66,8 @@ exports.addToCart = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      message: "Added to your cart!",
-      data: {
-        book,
-      },
+      message: "Added to cart!",
+      data: { book },
     });
   } catch (err) {
     res.status(500).json({
@@ -100,15 +80,10 @@ exports.addToCart = async (req, res) => {
 // =====================================
 exports.viewCart = async (req, res) => {
   try {
-    const userId = getUserIdFromToken(req.headers.authorization);
-    if (!userId) {
-      return res.status(401).json({
-        status: "fail",
-        message: "Authentication required.",
-      });
-    }
+    const userId = req.user.id;
 
     const cartItems = await CartItem.find({ user: userId }).populate("book");
+
     const formatted = cartItems.map((item) => ({
       id: item._id,
       bookId: item.book._id,
@@ -119,7 +94,7 @@ exports.viewCart = async (req, res) => {
       quantity: item.quantity,
     }));
 
-    return res.status(200).json({
+    res.status(200).json({
       status: "success",
       data: formatted,
     });
@@ -135,13 +110,7 @@ exports.viewCart = async (req, res) => {
 exports.removeFromCart = async (req, res) => {
   try {
     const { id } = req.body;
-    const userId = getUserIdFromToken(req.headers.authorization);
-    if (!userId) {
-      return res.status(401).json({
-        status: "fail",
-        message: "Authentication required.",
-      });
-    }
+    const userId = req.user.id;
 
     const item = await CartItem.findOneAndDelete({
       _id: id,
@@ -170,19 +139,84 @@ exports.removeFromCart = async (req, res) => {
 // =====================================
 exports.clearCart = async (req, res) => {
   try {
-    const userId = getUserIdFromToken(req.headers.authorization);
-    if (!userId) {
-      return res.status(401).json({
-        status: "fail",
-        message: "Authentication required.",
-      });
-    }
+    const userId = req.user.id;
 
     await CartItem.deleteMany({ user: userId });
 
     res.status(200).json({
       status: "success",
       message: "Your cart has been cleared.",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      message: err.message,
+    });
+  }
+};
+
+// =====================================
+exports.updateCartQuantity = async (req, res) => {
+  try {
+    const { id, quantity } = req.body;
+    const userId = req.user.id;
+
+    if (!id || typeof quantity !== "number") {
+      return res.status(400).json({
+        status: "fail",
+        message: "Cart item ID and valid quantity are required.",
+      });
+    }
+
+    const item = await CartItem.findOne({ _id: id, user: userId }).populate(
+      "book"
+    );
+
+    if (!item) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Cart item not found.",
+      });
+    }
+
+    const book = item.book;
+    const lang = item.language;
+    const stock = book.stock?.[lang];
+
+    if (stock === undefined) {
+      return res.status(400).json({
+        status: "fail",
+        message: `Language '${lang}' not available for this book.`,
+      });
+    }
+
+    if (quantity <= 0) {
+      await CartItem.findByIdAndDelete(id);
+      return res.status(200).json({
+        status: "success",
+        message: "Item removed from cart (quantity was 0 or less).",
+      });
+    }
+
+    if (quantity > stock) {
+      return res.status(400).json({
+        status: "fail",
+        message: `Only ${stock} items available in stock.`,
+      });
+    }
+
+    item.quantity = quantity;
+    await item.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "Cart item quantity updated.",
+      data: {
+        id: item._id,
+        bookId: book._id,
+        quantity: item.quantity,
+        maxAvailable: stock,
+      },
     });
   } catch (err) {
     res.status(500).json({
