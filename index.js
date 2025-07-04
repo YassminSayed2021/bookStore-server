@@ -8,11 +8,11 @@ const cartRoutes = require("./routes/cartRoutes");
 //====================================
 const uploadRoute = require("./routes/upload");
 const mongoose = require("mongoose");
-
-// ===============================================
 const app = express();
 
 app.use(express.json());
+// ===============================================
+
 app.use(morgan("dev"));
 app.use(cors());
 
@@ -22,6 +22,7 @@ const otpRoutes = require("./routes/otpRoutes");
 const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const bookMang = require("./routes/booksRoutes");
+const paymentStripe = require('./routes/paymentStripeRoutes');
 //====================================
 
 mongoose
@@ -41,6 +42,8 @@ app.use("/api/v1/bookmang", bookMang);
 app.use("/api/cart", cartRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
+//====================================
+app.use('/api/payment', paymentStripe);
 
 // ===========================
 const PORT = process.env.DB_PORT || 3000;

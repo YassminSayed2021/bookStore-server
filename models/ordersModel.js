@@ -10,7 +10,6 @@ const orderSchema = mongoose.Schema({
     required: true
   },
 
-
 books: [
     {
       book: {
@@ -18,12 +17,16 @@ books: [
         ref: 'Book',
         required: true
       },
-
-
       quantity: {
         type: Number,
         required: true,
         min: 1
+      },
+      language: {
+        type: String,
+        required: true, 
+        enum: ['ar', 'en', 'fr'], 
+        default: 'ar'
       }
     }
   ],
@@ -37,7 +40,7 @@ books: [
 
     status: {
     type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
     default: 'pending'
   }
 
