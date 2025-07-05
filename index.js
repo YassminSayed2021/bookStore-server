@@ -9,17 +9,24 @@ const wishListRoutes = require("./routes/wishListRoutes");
 //====================================
 const uploadRoute = require("./routes/upload");
 const mongoose = require("mongoose");
-
+const bookManagementRoute = require("./routes/bookManagementRoutes");
 // ===============================================
 const app = express();
+
+const requestLogger = require("./middlewares/requestLogger");
+const errorHandler = require("./middlewares/errorHandler");
+
+app.use(requestLogger); // Log every request
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
-app.use(cors({
-  origin: ['http://localhost:4200'], 
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: ["http://localhost:4200"],
+    credentials: true,
+  })
+);
 
 const userRoutes = require("./routes/usersRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -39,13 +46,16 @@ app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
 app.use("/api/v1/bookmang", bookMang);
 app.use("/api/v1/admin", adminRoutes);
-app.use("/api/v1/orders",orderRoutes);
-app.use("/api/v1/paypal",paypalRoutes);
+app.use("/api/v1/orders", orderRoutes);
+app.use("/api/v1/paypal", paypalRoutes);
 //====================================
 app.use("/api/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
+app.use("/api/v1/booksmang", bookManagementRoute);
+//====================================
+app.use(errorHandler);
 
 // ===========================
 const PORT = process.env.DB_PORT || 3000;
