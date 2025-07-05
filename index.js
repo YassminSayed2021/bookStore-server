@@ -44,7 +44,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/otp", otpRoutes);
 app.use("/api/v1/book", bookRoutes);
 app.use("/api/v1/review", reviewRoutes);
-app.use("/api/v1/bookmang", bookMang);
+// app.use("/api/v1/bookmang", bookMang);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/paypal", paypalRoutes);
@@ -53,7 +53,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
-app.use("/api/v1/booksmang", bookManagementRoute);
+// app.use("/api/v1/booksmang", bookManagementRoute);
 //====================================
 app.use(errorHandler);
 
