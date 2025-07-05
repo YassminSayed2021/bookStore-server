@@ -3,7 +3,7 @@ const CartItem = require("../models/cartModel");
 const Book = require("../models/booksModel");
 const Order = require("../models/ordersModel");
 const User = require("../models/usersModel");
-const mailSender = require("../utils/mailSender");
+const OrderConfirmationEmail = require("../utils/orderConfirmationEmail");
 
 const placeOrder = async(req,res)=>{
     const session = await mongoose.startSession();
@@ -74,6 +74,21 @@ orderBooks.push({
     );
     await CartItem.deleteMany({ user: user._id }, { session });
     await session.commitTransaction();
+    // await OrderConfirmationEmail(user.email, user.firstName, newOrder[0]._id, totalPrice);
+    const orderedBooks = cartItems.map((item) => ({
+  title: item.book.title,
+  quantity: item.quantity,
+}));
+
+await OrderConfirmationEmail(
+  user.email,
+  user.firstName,
+  newOrder[0]._id,
+  totalPrice,
+  orderedBooks
+);
+
+
     session.endSession();
 
     return res.status(201).json({
@@ -96,5 +111,51 @@ session.endSession();
     }
 }
 
-module.exports = {placeOrder}
+
+
+const getOrderHistory = async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+
+    const orders = await Order.find()
+      .populate({
+        path: "user",
+        match: { email: userEmail }, 
+        select: "firstName email",   
+      })
+      .populate({
+        path: "books.book",
+        select: "title price image", 
+      })
+      .sort({ createdAt: -1 });
+
+    const userOrders = orders.filter(order => order.user);
+
+    const formatted = userOrders.map(order => ({
+      id: order._id,
+      createdAt: order.createdAt,
+      status: order.status,
+      totalPrice: order.totalPrice,
+      books: order.books.map(item => ({
+        title: item.book?.title || "Deleted Book",
+        image: item.book?.image || "",
+        price: item.book?.price || 0,
+        quantity: item.quantity,
+      })),
+    }));
+
+    res.status(200).json({
+      status: "Success",
+      count: formatted.length,
+      data: formatted,
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "Failure",
+      message: "Error fetching order history",
+      error: err.message || err,
+    });
+  }
+};
+module.exports = {placeOrder,getOrderHistory}
     
