@@ -11,6 +11,7 @@ const orderSchema = mongoose.Schema({
   },
 
 
+
 books: [
     {
       book: {
@@ -24,7 +25,18 @@ books: [
         type: Number,
         required: true,
         min: 1
-      }
+      },
+      price: {
+  type: Number,
+  required: true
+},
+language: {
+  type: String,
+  enum: ['en', 'ar', 'fr'],
+  required: true
+}
+
+
     }
   ],
 
