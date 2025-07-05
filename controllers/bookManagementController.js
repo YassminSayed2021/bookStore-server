@@ -1,6 +1,7 @@
 const Book = require("../models/booksModel");
 const slugify = require("slugify");
 const cloudinary = require("../utils/cloudinary");
+
 //const { extractTextFromImage } = require("../utils/vision");
 
 const getAllBooks = async (req, res) => {

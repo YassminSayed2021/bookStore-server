@@ -1,33 +1,53 @@
 const Book = require("../models/booksModel");
 const Review = require("../models/reviewModel");
 const mongoose = require("mongoose");
-
 exports.getBooks = async (req, res) => {
+  console.log(">>> getBookById called. Params:", req.params);
   try {
-    let { page = 1, limit = 6 } = req.query;
+    const { sort, page = 1, limit = 6 } = req.query;
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+    // Parse page/limit
+    const pageNum = Math.max(parseInt(page), 1);
+    const limitNum = Math.max(parseInt(limit), 1);
+    const skip = (pageNum - 1) * limitNum;
 
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 6;
+    // Build sort option
+    let sortOption;
+    switch (sort) {
+      case "title_asc":
+        sortOption = { title: 1 };
+        break;
+      case "title_desc":
+        sortOption = { title: -1 };
+        break;
+      case "price_asc":
+        sortOption = { price: 1 };
+        break;
+      case "price_desc":
+        sortOption = { price: -1 };
+        break;
+      default:
+        sortOption = { createdAt: -1 };
+    }
 
-    const skip = (page - 1) * limit;
+    console.log("Sort option:", sortOption);
 
-    const books = await Book.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    // Query
+    const books = await Book.find().sort(sortOption).skip(skip).limit(limitNum);
 
     const total = await Book.countDocuments();
 
     res.status(200).json({
       status: "success",
-      page,
-      totalPages: Math.ceil(total / limit),
+      sort,
+      page: pageNum,
+      limit: limitNum,
       totalItems: total,
       results: books.length,
-      data: books,
+      data: books.map((b) => ({
+        title: b.title,
+        price: b.price,
+      })),
     });
   } catch (err) {
     console.error("Failed to fetch books:", err);
