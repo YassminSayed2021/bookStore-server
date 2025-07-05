@@ -24,26 +24,17 @@ exports.getBooks = async (req, res) => {
   }
 };
 
-exports.getBookById = async (req, res) => {
+
+exports.getBookBySlug = async (req, res) => {
   try {
-    const bookId = req.params.id;
-    console.log("ID received:", bookId);
-
-    if (!mongoose.Types.ObjectId.isValid(bookId)) {
-      console.log("Invalid ObjectId format");
-      return res.status(400).json({ message: "Invalid book ID" });
-    }
-
-    const book = await Book.findById(bookId);
-    console.log("Book found:", book);
+    const book = await Book.findOne({ slug: req.params.slug }).populate('reviews');
 
     if (!book) {
-      return res.status(404).json({ message: "Book not found" });
+      return res.status(404).json({ success: false, message: 'Book not found' });
     }
 
-    res.status(200).json({ data: book });
+    res.status(200).json({ success: true, data: book });
   } catch (err) {
-    console.error("❌ Error in getBookById:", err.stack);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
