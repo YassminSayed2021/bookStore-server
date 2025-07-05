@@ -23,10 +23,6 @@ exports.getBooks = async (req, res) => {
 
     res.status(200).json({
       status: "success",
-      page: 1,
-      totalPages: 1,
-      totalItems: books.length,
-      status: "success",
       page,
       totalPages: Math.ceil(total / limit),
       totalItems: total,
@@ -38,6 +34,65 @@ exports.getBooks = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// =====================================================
+// exports.getFilteredBooks = async (req, res) => {
+//   try {
+//     const { genre, language, priceMin, priceMax } = req.query;
+
+//     const query = {};
+
+//     // Category filter
+//     if (genre) {
+//       if (Array.isArray(genre)) {
+//         query.category = { $in: genre };
+//       } else {
+//         query.category = genre;
+//       }
+//     }
+
+//     // Price filter
+//     if (priceMin || priceMax) {
+//       query.price = {};
+//       if (priceMin) query.price.$gte = Number(priceMin);
+//       if (priceMax) query.price.$lte = Number(priceMax);
+//     }
+
+//     // Language stock filter
+//     if (language) {
+//       // Map language name to stock key
+//       const stockFieldMap = {
+//         Arabic: "ar",
+//         English: "en",
+//         French: "fr",
+//       };
+
+//       const langKeys = Array.isArray(language) ? language : [language];
+
+//       // Build $or to match any selected language with stock > 0
+//       query.$or = langKeys
+//         .map((lang) => {
+//           const key = stockFieldMap[lang];
+//           if (!key) return null;
+//           return { [`stock.${key}`]: { $gt: 0 } };
+//         })
+//         .filter(Boolean);
+//     }
+
+//     const books = await Book.find(query).sort({ createdAt: -1 });
+
+//     res.status(200).json({
+//       status: "success",
+//       results: books.length,
+//       data: books,
+//     });
+//   } catch (err) {
+//     console.error("❌ Error in getFilteredBooks:", err.stack);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// =====================================================
 
 exports.getBookById = async (req, res) => {
   try {
