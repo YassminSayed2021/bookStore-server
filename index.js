@@ -37,6 +37,7 @@ const bookMang = require("./routes/bookManagementRoutes"); // Changed from books
 const adminRoutes = require("./routes/adminRoutes");
 const orderRoutes = require("./routes/ordersRoutes");
 const paypalRoutes = require("./routes/paypalRoutes");
+const searchRoutes = require("./routes/searchRoutes");
 
 //routes
 app.use("/api/v1/users", userRoutes);
@@ -54,6 +55,7 @@ app.use("/api/wishList", wishListRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
 app.use("/api/v1/booksmang", bookManagementRoute);
+app.use("/api/v1", searchRoutes);
 //====================================
 app.use(errorHandler);
 
