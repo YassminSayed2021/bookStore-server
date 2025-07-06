@@ -2,7 +2,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 
 (async () => {
-  const uri = process.env.MONGO_URI;
+  const uri = process.env.MONGODB_URI;
 
   try {
     await mongoose.connect(uri);
@@ -14,14 +14,14 @@ const mongoose = require("mongoose");
     );
 
     const booksAsc = await Book.find().sort({ price: 1 }).limit(6);
-    console.log("\n--- price ASC ---");
+    /*console.log("\n--- price ASC ---");
     booksAsc.forEach((b) => console.log(`${b.title} - ${b.price}`));
 
     const booksDesc = await Book.find().sort({ price: -1 }).limit(6);
     console.log("\n--- price DESC ---");
     booksDesc.forEach((b) => console.log(`${b.title} - ${b.price}`));
 
-    process.exit(0);
+    process.exit(0);*/
   } catch (err) {
     console.error("❌ Error running sort test:", err);
     process.exit(1);
