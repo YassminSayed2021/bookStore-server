@@ -4,18 +4,8 @@ const connectDB = require("./config/database");
 const morgan = require("morgan");
 const cors = require("cors");
 
-
-
 // Middlewares
 
-
-
-
-//====================================
-const cartRoutes = require("./routes/cartRoutes");
-const wishListRoutes = require("./routes/wishListRoutes");
-//====================================
-const uploadRoute = require("./routes/upload");
 const mongoose = require("mongoose");
 const bookManagementRoute = require("./routes/bookManagementRoutes");
 // ===============================================
@@ -25,7 +15,6 @@ const requestLogger = require("./middlewares/requestLogger");
 const errorHandler = require("./middlewares/errorHandler");
 
 app.use(requestLogger); // Log every request
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -49,14 +38,11 @@ const bookRoutes = require("./routes/booksRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 
 const bookMang = require("./routes/booksRoutes"); // أو booksManagementRoutes لو عندك فعلاً مسار جديد
-const paymentStripe = require('./routes/paymentStripeRoutes');
+const paymentStripe = require("./routes/paymentStripeRoutes");
 
 const adminRoutes = require("./routes/adminRoutes");
 const orderRoutes = require("./routes/ordersRoutes");
 const paypalRoutes = require("./routes/paypalRoutes");
-
-
-
 
 const searchRoutes = require("./routes/searchRoutes");
 
@@ -76,7 +62,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
 app.use("/api/cloud", uploadRoute);
 
-app.use('/api/payment', paymentStripe);
+//app.use("/api/payment", paymentStripe);
 
 // Global error handler
 
@@ -84,7 +70,6 @@ app.use('/api/payment', paymentStripe);
 
 app.use("/api/v1/booksmang", bookManagementRoute);
 app.use("/api/v1", searchRoutes);
-
 
 app.use(errorHandler);
 

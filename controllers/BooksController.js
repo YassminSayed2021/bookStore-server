@@ -2,7 +2,6 @@ const Book = require("../models/booksModel");
 const Review = require("../models/reviewModel");
 const mongoose = require("mongoose");
 exports.getBooks = async (req, res) => {
-  console.log(">>> getBookById called. Params:", req.params);
   try {
     const { sort, page = 1, limit = 6 } = req.query;
 
@@ -122,13 +121,22 @@ exports.getBookById = async (req, res) => {
       console.log("Invalid ObjectId format");
       return res.status(400).json({ message: "Invalid book ID" });
     }
+  } catch (err) {
+    console.error("Error in getBookById:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
 
 exports.getBookBySlug = async (req, res) => {
   try {
-    const book = await Book.findOne({ slug: req.params.slug }).populate('reviews');
+    const book = await Book.findOne({ slug: req.params.slug }).populate(
+      "reviews"
+    );
 
     if (!book) {
-      return res.status(404).json({ success: false, message: 'Book not found' });
+      return res
+        .status(404)
+        .json({ success: false, message: "Book not found" });
     }
 
     res.status(200).json({ success: true, data: book });
@@ -146,6 +154,8 @@ exports.getBookBySlug = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
