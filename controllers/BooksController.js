@@ -42,11 +42,9 @@ exports.getBooks = async (req, res) => {
       page: pageNum,
       limit: limitNum,
       totalItems: total,
+      totalPages: Math.ceil(total / limitNum),
       results: books.length,
-      data: books.map((b) => ({
-        title: b.title,
-        price: b.price,
-      })),
+      data: books,  // Return the complete book objects instead of mapping to just title and price
     });
   } catch (err) {
     console.error("Failed to fetch books:", err);
