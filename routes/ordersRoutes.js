@@ -5,6 +5,4 @@ const { verifyToken } = require("../middlewares/verifyToken");
 
 router.post("/place-order", verifyToken,orderController.placeOrder);
 router.get("/history",verifyToken,orderController.getOrderHistory);
-router.get("/:id", verifyToken, orderController.getOrderById);
-
 module.exports = router;

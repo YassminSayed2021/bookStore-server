@@ -44,7 +44,6 @@ const orderSchema = mongoose.Schema({
     type: String,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
     default: 'pending'
-
   },
   paymentIntentId: {
     type: String,
@@ -68,7 +67,6 @@ statusHistory: [
       }
     }
   ]
-
 
 }, { timestamps: true });
 

@@ -157,26 +157,7 @@ const getOrderHistory = async (req, res) => {
     });
   }
 };
-const getOrderById = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id)
-      .populate("user", "firstName email")
-      .populate("books.book", "title price image");
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" });
-    }
+module.exports = {placeOrder,getOrderHistory}
 
-    // 🛡 أمان: لازم يكون نفس المستخدم هو صاحب الطلب
-    if (order.user.email !== req.user.email) {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
-    res.status(200).json({ status: "Success", data: order });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-};
-
-module.exports = {placeOrder,getOrderHistory ,getOrderById};
     
