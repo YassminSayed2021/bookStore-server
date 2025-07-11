@@ -42,10 +42,30 @@ books: [
     type: String,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
     default: 'pending'
-  }
-
-
-},{timestamps:true});
+  },
+  paymentIntentId: {
+    type: String,
+    required: false 
+  },
+statusHistory: [
+    {
+      status: {
+        type: String,
+        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
+        required: true
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now
+      },
+      refundStatus: {
+        type: String,
+        enum: ['none', 'pending', 'completed'],
+        default: 'none'
+      }
+    }
+  ]
+}, { timestamps: true });
 
 const Order = mongoose.model("Order",orderSchema);
 module.exports = Order;

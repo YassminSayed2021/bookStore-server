@@ -1,382 +1,43 @@
-// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// const mongoose = require('mongoose');
-// const Book = require('../models/booksModel');
-// const Order = require('../models/ordersModel');
 
-
-// exports.createCheckout = async (req, res) => {
-//   console.log("Received body:", req.body);
-// const { productId, quantity, amount, cartItems, language } = req.body;
-// const userId = req.user.id;
-// const email = req.user.email;
-
-// if (!userId || !email) {
-//   return res.status(400).json({ error: 'Unauthorized' });
-// }
-
-
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     let lineItems = [];
-//     let totalAmount = 0;
-//     let orderBooks = [];
-
-//     if (cartItems && cartItems.length > 0) {
-//       // الدفع من السلة
-//       for (const item of cartItems) {
-//         const book = await Book.findById(item.productId).session(session);
-//         if (!book || book.stock[item.language] < item.quantity) {
-//           await session.abortTransaction();
-//           return res.status(400).json({ error: `Out of stock: ${book?.title || 'Unknown'}` });
-//         }
-
-//         lineItems.push({
-//           price_data: {
-//             currency: 'EGP',
-//             product_data: {
-//               name: book.title,
-//             },
-//             unit_amount: book.price * 100,
-//           },
-//           quantity: item.quantity,
-//         });
-
-//         totalAmount += book.price * item.quantity;
-//         orderBooks.push({ book: item.productId, quantity: item.quantity });
-//       }
-//     } else if (productId && quantity) {
-//       const book = await Book.findById(productId).session(session);
-//       if (!book || book.stock[language] < quantity) {
-//         await session.abortTransaction();
-//         return res.status(400).json({ error: 'Product out of stock or not found' });
-//       }
-
-//       lineItems.push({
-//         price_data: {
-//           currency: 'EGP',
-//           product_data: {
-//             name: book.title,
-//           },
-//           unit_amount: book.price * 100,
-//         },
-//         quantity,
-//       });
-
-//       totalAmount = book.price * quantity;
-//       orderBooks.push({ book: productId, quantity });
-//     } else {
-//       await session.abortTransaction();
-//       return res.status(400).json({ error: 'Missing product or cart items' });
-//     }
-// if (totalAmount < 25) {
-//   await session.abortTransaction();
-//   return res.status(400).json({
-//     error: 'Stripe requires a minimum amount of 50 cents (about EGP 25). Please add more items.',
-//   });
-// }
-
-//     const paymentIntent = await stripe.paymentIntents.create({
-//       amount: totalAmount * 100,
-//       currency: 'EGP',
-//       payment_method_types: ['card'],
-//       metadata: { userId },
-//     });
-
-//     const order = await Order.create(
-//       [
-//         {
-//           user: userId,
-//           books: orderBooks,
-//           totalPrice: totalAmount,
-//           status: 'pending',
-//         },
-//       ],
-//       { session }
-//     );
-
-//     await session.commitTransaction();
-
-//     res.json({
-//       clientSecret: paymentIntent.client_secret,
-//       orderId: order[0]._id,
-//     });
-//   } catch (error) {
-//     await session.abortTransaction();
-//     console.error('Checkout error:', error);
-//     res.status(500).json({ error: 'Checkout failed' });
-//   } finally {
-//     session.endSession();
-//   }
-// };
-//  exports.confirmPayment = async (req, res) => {
-//    const { paymentIntentId, orderId } = req.body;
-
-//    if (!paymentIntentId || !orderId) {
-//      return res.status(400).json({ error: 'Missing paymentIntentId or orderId' });
-//    }
-
-//    const session = await mongoose.startSession();
-//    session.startTransaction();
-
-//    try {
-//     // Verify payment with Stripe
-//      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-//      if (paymentIntent.status !== 'succeeded') {
-//        await session.abortTransaction();
-//        return res.status(400).json({ error: 'Payment not completed' });
-//     }
-
-//      // Find order
-//      const order = await Order.findById(orderId).session(session);
-//     if (!order) {
-//        await session.abortTransaction();
-//        return res.status(404).json({ error: 'Order not found' });
-//      }
-
-//      // Deduct stock
-//      const book = await Book.findById(order.books[0].book).session(session);
-//      if (!book || book.stock.ar < order.books[0].quantity) {
-//       await session.abortTransaction();
-//       return res.status(400).json({ error: 'Stock no longer available' });
-//      }
-
-//     book.stock.ar -= order.books[0].quantity;
-//      await book.save({ session });
-
-//      // Update order status
-//     order.status = 'completed';
-//     await order.save({ session });
-
-//      await session.commitTransaction();
-//     res.json({ success: true });
-//   } catch (error) {
-//      await session.abortTransaction();
-//     console.error('Payment confirmation error:', error);
-//     res.status(500).json({ error: 'Payment confirmation failed' });
-//   } finally {
-//     session.endSession();
-//   }
-// //  };
-// const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-// const mongoose = require("mongoose");
-// const Book = require("../models/booksModel");
-// const Order = require("../models/ordersModel");
-// // Connect to MongoDB (move to a separate config file in production)
-// mongoose.connect(process.env.MONGODB_URI, {
-//   useNewUrlParser: true,
-//   useUnifiedTopology: true,
-// }).then(() => {
-//   console.log("Connected to MongoDB");
-// }).catch((err) => {
-//   console.error("MongoDB connection error:", err);
-// });
-
-// exports.createCheckoutSession = async (req, res) => {
-//   try {
-//     const session = await stripe.checkout.sessions.create({
-//       ui_mode: "custom",
-//       line_items: [
-//         {
-//           price: "prod_ScCUwt4SaF86xT", // Replace with actual Price ID
-//           quantity: 1,
-//         },
-//       ],
-//       mode: "payment",
-//       return_url: `http://localhost:4242/return.html?session_id={CHECKOUT_SESSION_ID}`,
-//     });
-
-//     res.send({ clientSecret: session.client_secret });
-//   } catch (error) {
-//     console.error("Create checkout session error:", error);
-//     res.status(500).json({ error: "Failed to create checkout session" });
-//   }
-// };
-
-// exports.getSessionStatus = async (req, res) => {
-//   try {
-//     const session = await stripe.checkout.sessions.retrieve(req.query.session_id);
-
-//     res.send({
-//       status: session.status,
-//       customer_email: session.customer_details.email,
-//     });
-//   } catch (error) {
-//     console.error("Session status error:", error);
-//     res.status(500).json({ error: "Failed to retrieve session status" });
-//   }
-// };
-
-// exports.createCheckout = async (req, res) => {
-//   console.log("📥 Received body:", req.body);
-
-//   const { productId, quantity, amount, cartItems, language } = req.body;
-//   const userId = req.user.id;
-//   const email = req.user.email;
-
-//   if (!userId || !email) {
-//     return res.status(400).json({ error: "Unauthorized" });
-//   }
-
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     let lineItems = [];
-//     let totalAmount = 0;
-//     let orderBooks = [];
-
-//     if (cartItems && cartItems.length > 0) {
-//       // سلة
-//       for (const item of cartItems) {
-//         const book = await Book.findById(item.productId).session(session);
-//         console.log("🛒 Book in cart:", book);
-//         console.log("📦 Full stock object:", book?.stock);
-//         console.log("🔤 Requested language:", item.language);
-//         console.log("📦 Stock for language:", book?.stock?.[item.language]);
-
-//         if (!book || book.stock[item.language] < item.quantity) {
-//           await session.abortTransaction();
-//           return res.status(400).json({
-//             error: `Out of stock: ${book?.title || "Unknown"}`,
-//           });
-//         }
-
-//         lineItems.push({
-//           price_data: {
-//             currency: "EGP",
-//             product_data: { name: book.title },
-//             unit_amount: book.price * 100,
-//           },
-//           quantity: item.quantity,
-//         });
-
-//         totalAmount += book.price * item.quantity;
-//         orderBooks.push({ book: item.productId, quantity: item.quantity });
-//       }
-//     } else if (productId && quantity) {
-//       const book = await Book.findById(productId).session(session);
-//       console.log("📚 Book found:", book);
-//       console.log("📦 Full stock object:", book?.stock);
-//       console.log("🔤 Requested language:", language);
-//       console.log("📦 Stock for language:", book?.stock?.[language]);
-
-//       if (!book || book.stock[language] < quantity) {
-//         await session.abortTransaction();
-//         return res.status(400).json({ error: "Product out of stock or not found" });
-//       }
-
-//       lineItems.push({
-//         price_data: {
-//           currency: "EGP",
-//           product_data: { name: book.title },
-//           unit_amount: book.price * 100,
-//         },
-//         quantity,
-//       });
-
-//       totalAmount = book.price * quantity;
-//       orderBooks.push({ book: productId, quantity });
-//     } else {
-//       await session.abortTransaction();
-//       return res.status(400).json({ error: "Missing product or cart items" });
-//     }
-
-//     if (totalAmount < 25) {
-//       await session.abortTransaction();
-//       return res.status(400).json({
-//         error:
-//           "Stripe requires a minimum amount of 50 cents (about EGP 25). Please add more items.",
-//       });
-//     }
-
-//     const paymentIntent = await stripe.paymentIntents.create({
-//       amount: totalAmount * 100,
-//       currency: "EGP",
-//       payment_method_types: ["card"],
-//       metadata: { userId },
-//     });
-
-//     const order = await Order.create(
-//       [
-//         {
-//           user: userId,
-//           books: orderBooks,
-//           totalPrice: totalAmount,
-//           status: "pending",
-//         },
-//       ],
-//       { session }
-//     );
-
-//     await session.commitTransaction();
-
-//     res.json({
-//       clientSecret: paymentIntent.client_secret,
-//       orderId: order[0]._id,
-//     });
-//   } catch (error) {
-//     await session.abortTransaction();
-//     console.error("❌ Checkout error:", error);
-//     res.status(500).json({ error: "Checkout failed" });
-//   } finally {
-//     session.endSession();
-//   }
-// };
-
-
-// exports.confirmPayment = async (req, res) => {
-//   const { paymentIntentId, orderId } = req.body;
-
-//   if (!paymentIntentId || !orderId) {
-//     return res.status(400).json({ error: "Missing paymentIntentId or orderId" });
-//   }
-
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-//     if (paymentIntent.status !== "succeeded") {
-//       await session.abortTransaction();
-//       return res.status(400).json({ error: "Payment not completed" });
-//     }
-
-//     const order = await Order.findById(orderId).session(session);
-//     if (!order) {
-//       await session.abortTransaction();
-//       return res.status(404).json({ error: "Order not found" });
-//     }
-
-//     const book = await Book.findById(order.books[0].book).session(session);
-//     if (!book || book.stock.ar < order.books[0].quantity) {
-//       await session.abortTransaction();
-//       return res.status(400).json({ error: "Stock no longer available" });
-//     }
-
-//     book.stock.ar -= order.books[0].quantity;
-//     await book.save({ session });
-
-//     order.status = "completed";
-//     await order.save({ session });
-
-//     await session.commitTransaction();
-//     res.json({ success: true });
-//   } catch (error) {
-//     await session.abortTransaction();
-//     console.error("Payment confirmation error:", error);
-//     res.status(500).json({ error: "Payment confirmation failed" });
-//   } finally {
-//     session.endSession();
-//   }
-// };
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const mongoose = require("mongoose");
 const Book = require("../models/booksModel");
 const Order = require("../models/ordersModel");
+const CartItem = require("../models/cartModel"); 
+const nodemailer = require("nodemailer");
+
+
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.MY_EMAIL,
+    pass: process.env.MY_EMAIL_PASSWORD,
+  },
+});
+
+const sendUserEmail = async (to, subject, html) => {
+  await transporter.sendMail({
+    from: 'BookStore 📚 <' + process.env.MY_EMAIL + '>',
+    to,
+    subject,
+    html,
+  });
+};
+
+const notifyAdmin = async (order) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const subject = "New Order Placed 📅";
+  const html = `
+    <h2>New Order Notification</h2>
+    <p><strong>Order ID:</strong> ${order._id}</p>
+    <p><strong>User:</strong> ${order.user}</p>
+    <p><strong>Total:</strong> ${order.totalPrice} EGP</p>
+      <p><strong>Status:</strong> ${order.status}</p>
+    <p>View the order in the admin dashboard.</p>
+  `;
+  await sendUserEmail(adminEmail, subject, html);
+};
 
 exports.createCheckout = async (req, res) => {
   console.log("📥 Received body:", req.body);
@@ -395,16 +56,25 @@ exports.createCheckout = async (req, res) => {
     let lineItems = [];
     let totalAmount = 0;
     let orderBooks = [];
+ let cart = cartItems;
+   
+    if (!cartItems || cartItems.length === 0) {
+      const userCart = await CartItem.find({ user: userId }).lean();
+      if (!userCart.length) {
+        await session.abortTransaction();
+        return res.status(400).json({ error: "Your cart is empty." });
+      }
+      cart = userCart;
+    }
 
-    if (cartItems && cartItems.length > 0) {
-      for (const item of cartItems) {
-        const book = await Book.findById(item.productId).session(session);
-        console.log("🛒 Book in cart:", book);
-        console.log("📦 Full stock object:", book?.stock);
-        console.log("🔤 Requested language:", item.language);
-        console.log("📦 Stock for language:", book?.stock?.[item.language]);
+    if (cart && cart.length > 0) {
+      for (const item of cart) {
+        const productId = item.productId || item.book;
+        const language = item.language;
+        const quantity = item.quantity;
 
-        if (!book || book.stock[item.language] < item.quantity) {
+        const book = await Book.findById(productId).session(session);
+        if (!book || book.stock[language] < quantity) {
           await session.abortTransaction();
           return res.status(400).json({
             error: `Out of stock: ${book?.title || "Unknown"}`,
@@ -417,18 +87,15 @@ exports.createCheckout = async (req, res) => {
             product_data: { name: book.title },
             unit_amount: book.price * 100,
           },
-          quantity: item.quantity,
+          quantity,
         });
 
-        totalAmount += book.price * item.quantity;
-        orderBooks.push({ book: item.productId, quantity: item.quantity, language: item.language });
+        totalAmount += book.price * quantity;
+        orderBooks.push({ book: productId, quantity, language });
       }
     } else if (productId && quantity) {
+      
       const book = await Book.findById(productId).session(session);
-      console.log("📚 Book found:", book);
-      console.log("📦 Full stock object:", book?.stock);
-      console.log("🔤 Requested language:", language);
-      console.log("📦 Stock for language:", book?.stock?.[language]);
 
       if (!book || book.stock[language] < quantity) {
         await session.abortTransaction();
@@ -451,13 +118,6 @@ exports.createCheckout = async (req, res) => {
       return res.status(400).json({ error: "Missing product or cart items" });
     }
 
-    if (totalAmount < 25) {
-      await session.abortTransaction();
-      return res.status(400).json({
-        error: "Stripe requires a minimum amount of 50 cents (about EGP 25). Please add more items.",
-      });
-    }
-
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalAmount * 100,
       currency: "EGP",
@@ -465,27 +125,28 @@ exports.createCheckout = async (req, res) => {
       metadata: { userId },
     });
 
-    const order = await Order.create(
-      [
-        {
-          user: userId,
-          books: orderBooks,
-          totalPrice: totalAmount,
-          status: "pending",
-        },
-      ],
-      { session }
-    );
+    const [order] = await Order.create([
+      {
+        user: userId,
+        books: orderBooks,
+        totalPrice: totalAmount,
+        status: "pending",
+      },
+    ], { session });
 
     await session.commitTransaction();
 
+    await notifyAdmin(order);
+
     res.json({
       clientSecret: paymentIntent.client_secret,
-      orderId: order[0]._id,
+      orderId: order._id,
     });
   } catch (error) {
-    await session.abortTransaction();
     console.error("❌ Checkout error:", error);
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     res.status(500).json({ error: "Checkout failed" });
   } finally {
     session.endSession();
@@ -493,14 +154,9 @@ exports.createCheckout = async (req, res) => {
 };
 
 exports.confirmPayment = async (req, res) => {
-  const { paymentIntentId, orderId } = req.body;
-
-  console.log("📩 Received confirmation request");
-  console.log("👉 paymentIntentId:", paymentIntentId);
-  console.log("👉 orderId:", orderId);
+  const { paymentIntentId, orderId, mode } = req.body;
 
   if (!paymentIntentId || !orderId) {
-    console.log("❌ Missing paymentIntentId or orderId");
     return res.status(400).json({ error: "Missing paymentIntentId or orderId" });
   }
 
@@ -508,51 +164,159 @@ exports.confirmPayment = async (req, res) => {
   session.startTransaction();
 
   try {
+    const confirmedPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-       console.log("💳 Retrieved paymentIntent:", paymentIntent.id, "status:", paymentIntent.status);
-    if (paymentIntent.status !== "succeeded") {
+    if (confirmedPaymentIntent.status !== "succeeded") {
       await session.abortTransaction();
-      console.log("❌ Payment not completed");
-      return res.status(400).json({ error: "Payment not completed" });
+      return res.status(400).json({ message: "Payment not completed" });
     }
 
     const order = await Order.findById(orderId).session(session);
     if (!order) {
       await session.abortTransaction();
-      console.log("❌ Order not found:", orderId)
       return res.status(404).json({ error: "Order not found" });
     }
-console.log("📦 Order found, processing stock...");
 
     for (const orderBook of order.books) {
       const book = await Book.findById(orderBook.book).session(session);
-       console.log("📚 Checking book stock for:", {
-    title: book?.title,
-    stock: book?.stock,
-    requestedLang: orderBook.language,
-    quantity: orderBook.quantity
-  });
-      console.log("🧾 Order being confirmed:", order);
-
       if (!book || book.stock[orderBook.language || 'ar'] < orderBook.quantity) {
         await session.abortTransaction();
-         console.log("❌ Book not found:", orderBook.book);
         return res.status(400).json({ error: `Stock no longer available for ${book?.title || 'Unknown'}` });
       }
+
       book.stock[orderBook.language || 'ar'] -= orderBook.quantity;
       await book.save({ session });
     }
 
-    order.status = "completed";
+   order.status = 'completed';
+    order.paymentIntentId = paymentIntentId; 
+    order.statusHistory.push({ status: 'completed', timestamp: new Date() });
     await order.save({ session });
 
+    const userId = req.user.id;
+
+    if (mode === 'buyNow') {
+      for (const orderBook of order.books) {
+        await CartItem.deleteOne({
+          user: userId,
+          book: orderBook.book,
+          language: orderBook.language
+        });
+      }
+    } else {
+      await CartItem.deleteMany({ user: userId });
+    }
+
     await session.commitTransaction();
+
+
+     try {
+      await notifyAdmin(order);
+    } catch (emailError) {
+      console.error('❌ Admin email failed, but payment processed:', emailError);
+
+    }
+
+    await sendUserEmail(req.user.email, "Your Payment was Successful ✅", `
+      <h2>Thank you for your purchase!</h2>
+      <p>Your order <strong>${order._id}</strong> has been completed successfully.</p>
+      <p>Total Paid: ${order.totalPrice} EGP</p>
+    `);
+
     res.json({ success: true });
   } catch (error) {
     await session.abortTransaction();
     console.error("Payment confirmation error:", error);
     res.status(500).json({ error: "Payment confirmation failed" });
+  } finally {
+    session.endSession();
+  }
+
+};
+exports.cancelOrder = async (req, res) => {
+  const { orderId } = req.body;
+  const userId = req.user.id;
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const order = await Order.findById(orderId).session(session);
+    if (!order) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.user.toString() !== userId) {
+      await session.abortTransaction();
+      return res.status(403).json({ error: 'Unauthorized to cancel this order' });
+    }
+
+    if (order.status !== 'completed') {
+      await session.abortTransaction();
+      return res.status(400).json({ error: 'Only completed orders can be cancelled' });
+    }
+
+    const orderDate = new Date(order.createdAt);
+    const now = new Date();
+    const hoursDiff = (now - orderDate) / (1000 * 60 * 60);
+
+    if (hoursDiff > 24) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: 'Cannot cancel order after 24 hours' });
+    }
+
+    if (!order.paymentIntentId) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: 'No payment information found for this order' });
+    }
+
+
+    const refund = await stripe.refunds.create({
+      payment_intent: order.paymentIntentId
+    });
+
+
+    for (const orderBook of order.books) {
+      const book = await Book.findById(orderBook.book).session(session);
+      if (book) {
+        book.stock[orderBook.language || 'ar'] += orderBook.quantity;
+        await book.save({ session });
+      }
+    }
+
+
+    order.status = 'cancelled';
+    order.statusHistory.push({
+      status: 'cancelled',
+      timestamp: new Date(),
+      refundStatus: refund.status === 'succeeded' ? 'completed' : 'pending'
+    });
+    await order.save({ session });
+    console.log("✅ Order saved as cancelled");
+    await session.commitTransaction();
+
+
+    await sendUserEmail(req.user.email, 'Your Order Has Been Cancelled', `
+      <h2>Order Cancellation Confirmation</h2>
+      <p>Your order <strong>${order._id}</strong> has been cancelled successfully.</p>
+      <p>Refund Status: ${refund.status === 'succeeded' ? 'Completed' : 'Pending'}</p>
+      <p>Total Refunded: ${order.totalPrice} EGP</p>
+    `);
+
+    await sendUserEmail(process.env.ADMIN_EMAIL, 'Order Cancelled Notification', `
+      <h2>Order Cancellation Notification</h2>
+      <p><strong>Order ID:</strong> ${order._id}</p>
+      <p><strong>User:</strong> ${order.user}</p>
+      <p><strong>Total Refunded:</strong> ${order.totalPrice} EGP</p>
+      <p><strong>Refund Status:</strong> ${refund.status}</p>
+    `);
+
+    res.json({ success: true, refundStatus: refund.status });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Order cancellation error:', error);
+    res.status(500).json({ error: 'Order cancellation failed' });
   } finally {
     session.endSession();
   }
