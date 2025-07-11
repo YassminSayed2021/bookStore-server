@@ -63,21 +63,22 @@ exports.loginUser = async (req, res) => {
 
   res.status(200).json({ token });
 };
-
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
-
+  console.log("Auth Header:", authHeader);
+  console.log("TOKEN_SECRET:", process.env.TOKEN_SECRET);
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Please login first" });
   }
-
   const token = authHeader.split(" ")[1];
-
+  console.log("Token:", token);
   try {
     const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+    console.log("Decoded Token:", decoded);
     req.user = decoded;
     next();
   } catch (err) {
+    console.error("Token Verification Error:", err.message);
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
