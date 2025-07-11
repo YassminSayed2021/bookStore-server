@@ -3,7 +3,7 @@ const Review = require("../models/reviewModel");
 const mongoose = require("mongoose");
 exports.getBooks = async (req, res) => {
   try {
-    const { sort, page = 1, limit = 6 } = req.query;
+    const { sort, page = 1, limit = 6, genre, language, priceMin, priceMax } = req.query;
 
     // Parse page/limit
     const pageNum = Math.max(parseInt(page), 1);
@@ -31,10 +31,49 @@ exports.getBooks = async (req, res) => {
 
     console.log("Sort option:", sortOption);
 
-    // Query
-    const books = await Book.find().sort(sortOption).skip(skip).limit(limitNum);
+    // Build query with filters
+    const query = {};
 
-    const total = await Book.countDocuments();
+    // Category/Genre filter
+    if (genre) {
+      if (Array.isArray(genre)) {
+        query.category = { $in: genre };
+      } else {
+        query.category = genre;
+      }
+    }
+
+    // Price filter
+    if (priceMin || priceMax) {
+      query.price = {};
+      if (priceMin) query.price.$gte = Number(priceMin);
+      if (priceMax) query.price.$lte = Number(priceMax);
+    }
+
+    // Language stock filter
+    if (language) {
+      // Map language name to stock key
+      const stockFieldMap = {
+        Arabic: "ar",
+        English: "en",
+        French: "fr",
+      };
+
+      const langKeys = Array.isArray(language) ? language : [language];
+
+      // Build $or to match any selected language with stock > 0
+      query.$or = langKeys
+        .map((lang) => {
+          const key = stockFieldMap[lang];
+          if (!key) return null;
+          return { [`stock.${key}`]: { $gt: 0 } };
+        })
+        .filter(Boolean);
+    }
+
+    // Query with filters
+    const books = await Book.find(query).sort(sortOption).skip(skip).limit(limitNum);
+    const total = await Book.countDocuments(query);
 
     res.status(200).json({
       status: "success",
@@ -44,7 +83,7 @@ exports.getBooks = async (req, res) => {
       totalItems: total,
       totalPages: Math.ceil(total / limitNum),
       results: books.length,
-      data: books,  // Return the complete book objects instead of mapping to just title and price
+      data: books,
     });
   } catch (err) {
     console.error("Failed to fetch books:", err);

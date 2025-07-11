@@ -23,7 +23,7 @@ const cartRoutes = require("./routes/cartRoutes");
 const wishListRoutes = require("./routes/wishListRoutes");
 const uploadRoute = require("./routes/upload");
 const searchRoutes = require("./routes/searchRoutes");
-// const paymentStripe = require("./routes/paymentStripeRoutes"); // Uncomment if used
+const paymentStripe = require("./routes/paymentStripeRoutes"); // Uncomment if used
 
 // Initialize Express App
 const app = express();
@@ -56,7 +56,7 @@ app.use("/api/v1/review", reviewRoutes);
 // Orders, Payment
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/paypal", paypalRoutes);
-// app.use("/api/payment", paymentStripe); // Uncomment when needed
+app.use("/api/payment", paymentStripe); // Uncomment when needed
 
 // Cart, Wishlist, Upload
 app.use("/api/cart", cartRoutes);
