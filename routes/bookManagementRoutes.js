@@ -7,18 +7,20 @@ const { admin } = require("../middlewares/admin");
 const {
   getAllBooks,
   createBook,
-} = require("../controllers/bookManagementController");
-const {
   updateBook,
   deleteBook,
 } = require("../controllers/bookManagementController");
 
-router.put("/:id", verifyToken, admin, updateBook);
-router.delete("/:id", deleteBook);
-
-router.get("/", getAllBooks);
-
-// Admin only: create new book with image upload
+// Create a new book
 router.post("/", verifyToken, admin, upload.single("image"), createBook);
+
+// Update a book
+router.put("/:id", verifyToken, admin, upload.single("image"), updateBook);
+
+// Delete a book
+router.delete("/:id", verifyToken, admin, deleteBook);
+
+// Get all books
+router.get("/", getAllBooks);
 
 module.exports = router;

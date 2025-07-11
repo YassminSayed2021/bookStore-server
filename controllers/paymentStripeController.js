@@ -91,7 +91,7 @@ exports.createCheckout = async (req, res) => {
         });
 
         totalAmount += book.price * quantity;
-        orderBooks.push({ book: productId, quantity, language });
+        orderBooks.push({ book: productId, quantity, language,price: book.price });
       }
     } else if (productId && quantity) {
       
@@ -112,7 +112,7 @@ exports.createCheckout = async (req, res) => {
       });
 
       totalAmount = book.price * quantity;
-      orderBooks.push({ book: productId, quantity, language });
+      orderBooks.push({ book: productId, quantity, language ,price: book.price});
     } else {
       await session.abortTransaction();
       return res.status(400).json({ error: "Missing product or cart items" });
