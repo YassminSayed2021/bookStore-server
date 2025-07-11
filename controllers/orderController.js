@@ -117,7 +117,7 @@ const getOrderHistory = async (req, res) => {
   try {
     const userEmail = req.user.email;
 
-    const orders = await Order.find()
+    const orders = await Order.find({ status: "delivered" })
       .populate({
         path: "user",
         match: { email: userEmail }, 
