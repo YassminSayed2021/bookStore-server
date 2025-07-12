@@ -38,7 +38,7 @@ app.use(cors({
   credentials: true,
 }));
 
-// ======= ROUTES =======
+const paypalRoutes = require('./routes/paypalRoutes');
 
 // User and Auth
 app.use("/api/v1/users", userRoutes);
