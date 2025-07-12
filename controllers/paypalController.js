@@ -50,10 +50,12 @@
 
 
 
-
+require('dotenv').config();
 const { client }  = require('../config/paypalClient');
 const paypal      = require('@paypal/checkout-server-sdk');
 const Order       = require('../models/ordersModel');
+const FRONT_BASE = process.env.FRONT_BASE
+
 
 exports.createOrder = async (req, res) => {
   try {
@@ -82,7 +84,9 @@ exports.createOrder = async (req, res) => {
         brand_name:  'BookStoreApp',
         landing_page:'LOGIN',
         user_action: 'PAY_NOW',
-        return_url:  'http://localhost:3000/api/v1/paypal/capture', 
+        // return_url:  'http://localhost:3000/api/v1/paypal/capture', 
+            return_url: `${FRONT_BASE}/paypal`,           
+
         cancel_url:  'http://localhost:3000/payment-cancelled'
       }
     });
