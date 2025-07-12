@@ -63,6 +63,25 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
 app.use("/api/cloud", uploadRoute);
 
+
+//---------------------------
+//chatbot 
+
+const chatbotRoutes = require("./routes/chatbotRoutes");
+
+app.use(express.json());
+
+app.use("/chatbot", chatbotRoutes);
+
+
+//---------------------------
+//chatbot 
+
+const chatbotRoutes = require("./routes/chatbotRoutes");
+app.use(express.json());
+app.use("/chatbot", chatbotRoutes);
+
+
 // Search
 app.use("/api/v1", searchRoutes);
 
@@ -75,3 +94,4 @@ app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   await connectDB();
 });
+
