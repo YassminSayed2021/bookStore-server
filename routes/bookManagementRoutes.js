@@ -11,15 +11,16 @@ const {
   deleteBook,
 } = require("../controllers/bookManagementController");
 
+// Create a new book
+router.post("/", verifyToken, admin, upload.single("image"), createBook);
 
-// router.put("/:id", verifyToken, admin, updateBook);
+// Update a book
 router.put("/:id", verifyToken, admin, upload.single("image"), updateBook);
 
+// Delete a book
 router.delete("/:id", verifyToken, admin, deleteBook);
 
+// Get all books
 router.get("/", getAllBooks);
-
-// Admin only: create new book with image upload
-router.post("/", verifyToken, admin, upload.single("image"), createBook);
 
 module.exports = router;

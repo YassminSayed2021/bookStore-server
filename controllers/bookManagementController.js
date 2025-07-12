@@ -1,17 +1,18 @@
 const Book = require("../models/booksModel");
 const slugify = require("slugify");
 const cloudinary = require("../utils/cloudinary");
-const { extractTextFromImage } = require('../utils/vision');
+
+//const { extractTextFromImage } = require("../utils/vision");
 
 const getAllBooks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    
+
     // Count total books for pagination
     const totalBooks = await Book.countDocuments();
-    
+
     // Get books with pagination
     const books = await Book.find()
       .populate("user", "name")
@@ -24,7 +25,7 @@ const getAllBooks = async (req, res) => {
       totalPages: Math.ceil(totalBooks / limit),
       totalItems: totalBooks,
       results: books.length,
-      data: books
+      data: books,
     });
   } catch (err) {
     res.status(500).json({
@@ -126,23 +127,9 @@ const createBook = async (req, res) => {
       });
 
       imageUrl = result.secure_url;
-
-      // ✅ Extract text using Google Vision API
-      const ocrText = await extractTextFromImage(imageUrl);
-      console.log("Extracted OCR Text:\n", ocrText);
-
-      // ✅ Return extracted data without saving to DB
-      if (!title || !price) {
-        return res.status(200).json({
-          status: "partial",
-          message: "Cover image processed. Please confirm extracted data.",
-          image: imageUrl,
-          ocrText,
-        });
-      }
     }
 
-    // ✅ Continue to save if required fields are present
+    // ✅ Check for required fields
     if (!title || !price) {
       return res.status(400).json({
         status: "fail",
@@ -298,17 +285,17 @@ const updateBook = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Book updated successfully.",
-      data: { updatedBook },
+      data: updatedBook,
     });
-  } catch (error) {
-    console.error("PUT update failed:", error);
+  } catch (err) {
+    console.error("Update failed:", err);
     res.status(500).json({
-      status: "error",
-      message: "Server error.",
+      status: "fail",
+      message: "Book update failed",
+      error: err.message,
     });
   }
 };
-
 
 // DELETE BOOK
 const deleteBook = async (req, res) => {
@@ -336,8 +323,8 @@ const deleteBook = async (req, res) => {
 };
 
 module.exports = {
-  getAllBooks,
-  createBook,
   updateBook,
   deleteBook,
+  createBook,
+  getAllBooks,
 };
