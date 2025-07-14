@@ -12,7 +12,7 @@ const { firstNameValidation,lastNameValidation, oldpasswordValidation, newpasswo
 
 router.get("/", verifyToken,admin,usersController.getAllUsers);
 router.get("/myprofile",verifyToken,usersController.getmyProfile);
-router.patch("/myprofile",verifyToken,firstNameValidation.optional(),lastNameValidation,oldpasswordValidation,newpasswordValidation,usersController.updatemyProfile);
+router.patch("/myprofile",verifyToken,firstNameValidation.optional(),lastNameValidation,newpasswordValidation,usersController.updatemyProfile);
 
 
 
