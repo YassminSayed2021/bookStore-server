@@ -77,8 +77,7 @@ const login = async (req, res) => {
     }
     const token = generateAccessToken({
       id: user._id,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      name: user.name,
       email: user.email,
       role: user.role,
     });
@@ -327,13 +326,7 @@ const googleLogin = async (req, res) => {
       });
     }
 
-    const tokenRes = jwt.sign({ 
-      id: user._id,
-      email: user.email,
-      firstName: user.firstName,
-      role: user.role, }, process.env.TOKEN_SECRET, {
-      expiresIn: "1800s",
-    });
+    const tokenRes = jwt.sign({ id: user._id,name:user.name, role: user.role, }, process.env.TOKEN_SECRET, {expiresIn: "1800s",});
 
     res.status(200).json({
       success: true,

@@ -78,19 +78,13 @@ app.use("/api/upload", uploadRoutes);
 //---------------------------
 //chatbot 
 
-const chatbotRoutes = require("./routes/chatbotRoutes");
+// const chatbotRoutes = require("./routes/chatbotRoutes");
 
-app.use(express.json());
+// app.use(express.json());
 
-app.use("/chatbot", chatbotRoutes);
+// app.use("/chatbot", chatbotRoutes);
 
 
-//---------------------------
-//chatbot 
-
-const chatbotRoutes = require("./routes/chatbotRoutes");
-app.use(express.json());
-app.use("/chatbot", chatbotRoutes);
 
 
 // Search
