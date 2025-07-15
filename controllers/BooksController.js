@@ -1,118 +1,39 @@
 const Book = require("../models/booksModel");
 const Review = require("../models/reviewModel");
 const mongoose = require("mongoose");
+
 exports.getBooks = async (req, res) => {
-  console.log(">>> getBookById called. Params:", req.params);
   try {
-    const { sort, page = 1, limit = 6 } = req.query;
+    let { page = 1, limit = 6 } = req.query;
 
-    // Parse page/limit
-    const pageNum = Math.max(parseInt(page), 1);
-    const limitNum = Math.max(parseInt(limit), 1);
-    const skip = (pageNum - 1) * limitNum;
+    page = parseInt(page);
+    limit = parseInt(limit);
 
-    // Build sort option
-    let sortOption;
-    switch (sort) {
-      case "title_asc":
-        sortOption = { title: 1 };
-        break;
-      case "title_desc":
-        sortOption = { title: -1 };
-        break;
-      case "price_asc":
-        sortOption = { price: 1 };
-        break;
-      case "price_desc":
-        sortOption = { price: -1 };
-        break;
-      default:
-        sortOption = { createdAt: -1 };
-    }
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 6;
 
-    console.log("Sort option:", sortOption);
+    const skip = (page - 1) * limit;
 
-    // Query
-    const books = await Book.find().sort(sortOption).skip(skip).limit(limitNum);
+    const books = await Book.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     const total = await Book.countDocuments();
 
     res.status(200).json({
       status: "success",
-      sort,
-      page: pageNum,
-      limit: limitNum,
+      page,
+      totalPages: Math.ceil(total / limit),
       totalItems: total,
       results: books.length,
-      data: books.map((b) => ({
-        title: b.title,
-        price: b.price,
-      })),
+      data: books,
     });
   } catch (err) {
     console.error("Failed to fetch books:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Server error." });
   }
 };
-
-// =====================================================
-// exports.getFilteredBooks = async (req, res) => {
-//   try {
-//     const { genre, language, priceMin, priceMax } = req.query;
-
-//     const query = {};
-
-//     // Category filter
-//     if (genre) {
-//       if (Array.isArray(genre)) {
-//         query.category = { $in: genre };
-//       } else {
-//         query.category = genre;
-//       }
-//     }
-
-//     // Price filter
-//     if (priceMin || priceMax) {
-//       query.price = {};
-//       if (priceMin) query.price.$gte = Number(priceMin);
-//       if (priceMax) query.price.$lte = Number(priceMax);
-//     }
-
-//     // Language stock filter
-//     if (language) {
-//       // Map language name to stock key
-//       const stockFieldMap = {
-//         Arabic: "ar",
-//         English: "en",
-//         French: "fr",
-//       };
-
-//       const langKeys = Array.isArray(language) ? language : [language];
-
-//       // Build $or to match any selected language with stock > 0
-//       query.$or = langKeys
-//         .map((lang) => {
-//           const key = stockFieldMap[lang];
-//           if (!key) return null;
-//           return { [`stock.${key}`]: { $gt: 0 } };
-//         })
-//         .filter(Boolean);
-//     }
-
-//     const books = await Book.find(query).sort({ createdAt: -1 });
-
-//     res.status(200).json({
-//       status: "success",
-//       results: books.length,
-//       data: books,
-//     });
-//   } catch (err) {
-//     console.error("❌ Error in getFilteredBooks:", err.stack);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// =====================================================
 
 exports.getBookById = async (req, res) => {
   try {

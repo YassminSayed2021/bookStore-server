@@ -53,7 +53,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
 //====================================
 app.use("/api/cloud", uploadRoute);
-// app.use("/api/v1/booksmang", bookManagementRoute);
+app.use("/api/v1/booksmang", bookManagementRoute);
 //====================================
 app.use(errorHandler);
 
