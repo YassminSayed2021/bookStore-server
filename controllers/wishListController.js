@@ -88,13 +88,18 @@ exports.viewWishlist = async (req, res) => {
 // =====================================
 exports.removeFromWishlist = async (req, res) => {
   try {
-    const { id } = req.body;
+    const bookId = req.query.bookId || req.body.id;
     const userId = req.user.id;
-    console.log(id);
-    console.log(userId);
+    
+    if (!bookId) {
+      return res.status(400).json({
+        status: "fail",
+        message: "Book ID is required.",
+      });
+    }
 
     const item = await WishlistItem.findOneAndDelete({
-      book: id,
+      book: bookId,
       user: userId,
     });
 

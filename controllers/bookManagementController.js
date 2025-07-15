@@ -101,7 +101,6 @@ const createBook = async (req, res) => {
   try {
     const {
       title,
-      category,
       author,
       authorDescription,
       price,
@@ -109,7 +108,46 @@ const createBook = async (req, res) => {
       stockAr,
       stockEn,
       stockFr,
+      categoryId,
+      categoryName
     } = req.body;
+
+    console.log('Request body:', req.body); // Debug log
+
+    // Get category from request body - fix the parsing for form data
+    let category = { _id: '', name: '' };
+    
+    // Approach 1: Check if category was sent as JSON string
+    if (req.body.category && typeof req.body.category === 'string') {
+      try {
+        category = JSON.parse(req.body.category);
+      } catch (e) {
+        console.error('Error parsing category JSON:', e);
+      }
+    } 
+    // Approach 2: Check for bracket notation fields
+    else if (req.body['category[_id]']) {
+      category = {
+        _id: req.body['category[_id]'],
+        name: req.body['category[name]'] || ''
+      };
+    } 
+    // Approach 3: Check for flat fields
+    else if (categoryId) {
+      category = {
+        _id: categoryId,
+        name: categoryName || ''
+      };
+    }
+    // Approach 4: Check if category is an object directly
+    else if (req.body.category && typeof req.body.category === 'object') {
+      category = {
+        _id: req.body.category._id || '',
+        name: req.body.category.name || ''
+      };
+    }
+    
+    console.log('Parsed category:', category); // Debug log
 
     let imageUrl = null;
 
@@ -217,11 +255,10 @@ const updateBook = async (req, res) => {
   try {
     console.log("Decoded user from token:", req.user);
 
-    const { id } = req.params;
+    const { id } = req.params; // Can be either an ID or slug
 
     const {
       title,
-      category,
       author,
       authorDescription,
       price,
@@ -229,7 +266,46 @@ const updateBook = async (req, res) => {
       stockAr,
       stockEn,
       stockFr,
+      categoryId,
+      categoryName
     } = req.body;
+
+    console.log('Update Request body:', req.body); // Debug log
+
+    // Get category from request body - fix the parsing for form data
+    let category = { _id: '', name: '' };
+    
+    // Approach 1: Check if category was sent as JSON string
+    if (req.body.category && typeof req.body.category === 'string') {
+      try {
+        category = JSON.parse(req.body.category);
+      } catch (e) {
+        console.error('Error parsing category JSON:', e);
+      }
+    } 
+    // Approach 2: Check for bracket notation fields
+    else if (req.body['category[_id]']) {
+      category = {
+        _id: req.body['category[_id]'],
+        name: req.body['category[name]'] || ''
+      };
+    } 
+    // Approach 3: Check for flat fields
+    else if (categoryId) {
+      category = {
+        _id: categoryId,
+        name: categoryName || ''
+      };
+    }
+    // Approach 4: Check if category is an object directly
+    else if (req.body.category && typeof req.body.category === 'object') {
+      category = {
+        _id: req.body.category._id || '',
+        name: req.body.category.name || ''
+      };
+    }
+    
+    console.log('Parsed category for update:', category); // Debug log
 
     if (!title || !price) {
       return res.status(400).json({
@@ -238,6 +314,7 @@ const updateBook = async (req, res) => {
       });
     }
 
+    // Create the updatedData object including the category
     const updatedData = {
       title,
       category,
@@ -270,10 +347,24 @@ const updateBook = async (req, res) => {
       updatedData.image = result.secure_url;
     }
 
-    const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {
-      new: true,
-      runValidators: true,
-    });
+    // Check if the ID parameter is a valid MongoDB ObjectID
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    
+    let updatedBook;
+    
+    if (isValidObjectId) {
+      // If it's a valid ObjectID, update by ID
+      updatedBook = await Book.findByIdAndUpdate(id, updatedData, {
+        new: true,
+        runValidators: true,
+      });
+    } else {
+      // Otherwise, try to update by slug
+      updatedBook = await Book.findOneAndUpdate({ slug: id }, updatedData, {
+        new: true,
+        runValidators: true,
+      });
+    }
 
     if (!updatedBook) {
       return res.status(404).json({
@@ -300,7 +391,20 @@ const updateBook = async (req, res) => {
 // DELETE BOOK
 const deleteBook = async (req, res) => {
   try {
-    const deletedBook = await Book.findByIdAndDelete(req.params.id);
+    const { id } = req.params; // Can be either an ID or slug
+    
+    // Check if the ID parameter is a valid MongoDB ObjectID
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    
+    let deletedBook;
+    
+    if (isValidObjectId) {
+      // If it's a valid ObjectID, delete by ID
+      deletedBook = await Book.findByIdAndDelete(id);
+    } else {
+      // Otherwise, try to delete by slug
+      deletedBook = await Book.findOneAndDelete({ slug: id });
+    }
 
     if (!deletedBook) {
       return res.status(404).json({
@@ -322,9 +426,77 @@ const deleteBook = async (req, res) => {
   }
 };
 
+// GET BOOK BY SLUG
+const getBookBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const book = await Book.findOne({ slug });
+    
+    if (!book) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Book not found."
+      });
+    }
+    
+    res.status(200).json({
+      status: "success",
+      data: book
+    });
+  } catch (err) {
+    console.error("Error fetching book by slug:", err);
+    res.status(500).json({
+      status: "fail",
+      message: "Error fetching book",
+      error: err.message
+    });
+  }
+};
+
+// GET BOOK BY ID
+const getBookById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Check if the ID is a valid MongoDB ObjectID
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    
+    let book;
+    
+    if (isValidObjectId) {
+      // If it's a valid ObjectID, fetch by ID
+      book = await Book.findById(id);
+    } else {
+      // Otherwise, try to find by slug
+      book = await Book.findOne({ slug: id });
+    }
+    
+    if (!book) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Book not found."
+      });
+    }
+    
+    res.status(200).json({
+      status: "success",
+      data: book
+    });
+  } catch (err) {
+    console.error("Error fetching book:", err);
+    res.status(500).json({
+      status: "fail",
+      message: "Error fetching book",
+      error: err.message
+    });
+  }
+};
+
 module.exports = {
   updateBook,
   deleteBook,
   createBook,
   getAllBooks,
+  getBookById,
+  getBookBySlug
 };
