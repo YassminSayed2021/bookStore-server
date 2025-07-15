@@ -306,4 +306,180 @@ const deleteReview = async (req, res) => {
   }
 };
 
-module.exports= {getReviews,getBookReviews,submitReview, updateReview,deleteReview};
+
+// Add these functions to the existing reviewController.js file
+
+// Admin: Get all reviews with pagination
+const getAllReviews = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    const totalReviews = await Review.countDocuments();
+    const totalPages = Math.ceil(totalReviews / limit);
+    
+    const reviews = await Review.find()
+      .populate({
+        path: "user",
+        select: "firstName lastName email"
+      })
+      .populate({
+        path: "book",
+        select: "title author image"
+      })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    const formattedReviews = reviews.map(review => ({
+      id: review._id,
+      user: review.user ? `${review.user.firstName} ${review.user.lastName}` : "Unknown User",
+      email: review.user ? review.user.email : "Unknown",
+      book: review.book ? review.book.title : "Unknown Book",
+      rating: review.rating,
+      review: review.review,
+      date: review.createdAt
+    }));
+    
+    res.status(200).json({
+      status: "Success",
+      count: formattedReviews.length,
+      totalPages,
+      currentPage: page,
+      data: formattedReviews
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "Failure",
+      message: "Error fetching reviews",
+      error: err.message || err
+    });
+  }
+};
+
+// Admin: Get review by ID
+const getReviewById = async (req, res) => {
+  try {
+    const reviewId = req.params.id;
+    
+    const review = await Review.findById(reviewId)
+      .populate({
+        path: "user",
+        select: "firstName lastName email"
+      })
+      .populate({
+        path: "book",
+        select: "title author image"
+      });
+    
+    if (!review) {
+      return res.status(404).json({
+        status: "Failure",
+        message: "Review not found"
+      });
+    }
+    
+    const formattedReview = {
+      id: review._id,
+      user: review.user ? `${review.user.firstName} ${review.user.lastName}` : "Unknown User",
+      email: review.user ? review.user.email : "Unknown",
+      book: review.book ? review.book.title : "Unknown Book",
+      rating: review.rating,
+      review: review.review,
+      date: review.createdAt
+    };
+    
+    res.status(200).json({
+      status: "Success",
+      data: formattedReview
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "Failure",
+      message: "Error fetching review",
+      error: err.message || err
+    });
+  }
+};
+
+// Admin: Update review status (e.g., approve/reject)
+const updateReviewStatus = async (req, res) => {
+  try {
+    const reviewId = req.params.id;
+    const { status } = req.body;
+    
+    if (!status || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({
+        status: "Failure",
+        message: "Invalid status value. Must be 'approved' or 'rejected'."
+      });
+    }
+    
+    const review = await Review.findByIdAndUpdate(
+      reviewId,
+      { status },
+      { new: true }
+    );
+    
+    if (!review) {
+      return res.status(404).json({
+        status: "Failure",
+        message: "Review not found"
+      });
+    }
+    
+    res.status(200).json({
+      status: "Success",
+      message: `Review ${status} successfully`,
+      data: review
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "Failure",
+      message: "Error updating review status",
+      error: err.message || err
+    });
+  }
+};
+
+// Admin: Delete review
+const deleteReviewByAdmin = async (req, res) => {
+  try {
+    const reviewId = req.params.id;
+    
+    const review = await Review.findByIdAndDelete(reviewId);
+    
+    if (!review) {
+      return res.status(404).json({
+        status: "Failure",
+        message: "Review not found"
+      });
+    }
+    
+    res.status(200).json({
+      status: "Success",
+      message: "Review deleted successfully"
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "Failure",
+      message: "Error deleting review",
+      error: err.message || err
+    });
+  }
+};
+
+// Export the new admin methods
+module.exports = {
+  getReviews,
+  getBookReviews,
+  submitReview,
+  updateReview,
+  deleteReview,
+  // Admin methods
+  getAllReviews,
+  getReviewById,
+  updateReviewStatus,
+  deleteReviewByAdmin
+};

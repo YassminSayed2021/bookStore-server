@@ -76,8 +76,9 @@ const login = async (req, res) => {
         .json({ message: "Email or Password are not valid" });
     }
     const token = generateAccessToken({
-      id: user.id,
-      name: user.name,
+      id: user._id,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       role: user.role,
     });
@@ -326,7 +327,11 @@ const googleLogin = async (req, res) => {
       });
     }
 
-    const tokenRes = jwt.sign({ id: user._id }, process.env.TOKEN_SECRET, {
+    const tokenRes = jwt.sign({ 
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      role: user.role, }, process.env.TOKEN_SECRET, {
       expiresIn: "1800s",
     });
 

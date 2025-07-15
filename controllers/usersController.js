@@ -68,6 +68,66 @@ if (updates.hasOwnProperty("lastName")) {
  }
 }
 
+// Handle phone update
+if (updates.hasOwnProperty("phone")) {
+  user.phone = updates.phone;
+}
+
+// Handle billing address update
+if (updates.billingAddress) {
+  user.billingAddress = updates.billingAddress;
+}
+
+// Handle shipping address update
+if (updates.shippingAddress) {
+  user.shippingAddress = updates.shippingAddress;
+}
+
+// Handle adding a new payment method
+if (updates.paymentMethod) {
+  if (!user.paymentMethods) {
+    user.paymentMethods = [];
+  }
+  
+  // If this is the first payment method, make it default
+  if (user.paymentMethods.length === 0) {
+    updates.paymentMethod.isDefault = true;
+  }
+  
+  user.paymentMethods.push(updates.paymentMethod);
+}
+
+// Handle removing a payment method
+if (updates.removePaymentMethod) {
+  if (user.paymentMethods && user.paymentMethods.length > 0) {
+    const paymentMethodId = updates.removePaymentMethod;
+    const index = user.paymentMethods.findIndex(pm => pm._id.toString() === paymentMethodId);
+    
+    if (index !== -1) {
+      const wasDefault = user.paymentMethods[index].isDefault;
+      user.paymentMethods.splice(index, 1);
+      
+      // If the removed payment method was the default and there are other payment methods,
+      // set the first one as default
+      if (wasDefault && user.paymentMethods.length > 0) {
+        user.paymentMethods[0].isDefault = true;
+      }
+    }
+  }
+}
+
+// Handle setting a default payment method
+if (updates.defaultPaymentMethod) {
+  if (user.paymentMethods && user.paymentMethods.length > 0) {
+    const paymentMethodId = updates.defaultPaymentMethod;
+    
+    // Set all payment methods to non-default
+    user.paymentMethods.forEach(pm => {
+      pm.isDefault = (pm._id.toString() === paymentMethodId);
+    });
+  }
+}
+
 if (updates.newPassword) {
 
  if (!updates.oldPassword) {
@@ -97,7 +157,11 @@ if (updates.newPassword) {
        firstName: user.firstName,
        lastName: user.lastName,
        email: user.email,
-       role: user.role
+       phone: user.phone,
+       role: user.role,
+       billingAddress: user.billingAddress,
+       shippingAddress: user.shippingAddress,
+       paymentMethods: user.paymentMethods
      }
    });
 
@@ -106,6 +170,7 @@ if (updates.newPassword) {
        res.status(500).json({
      status: "Failure",
      message: "Internal server error",
+     error: err.message
    });
 
 }
