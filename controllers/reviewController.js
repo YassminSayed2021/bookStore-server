@@ -1,6 +1,7 @@
 const Book = require("../models/booksModel");
 const Review = require("../models/reviewModel");
 const User = require("../models/usersModel");
+const Order = require("../models/ordersModel");
 const { isValidObjectId } = require("mongoose");
 const { validationResult, body } = require("express-validator");
 
@@ -139,6 +140,19 @@ const userId = userData._id;
         message: "You have already commented on this book",
       });
 
+    }
+
+      const hasPurchased = await Order.findOne({
+      user: userId,
+      status: "delivered",
+      "books.book": bookId
+    });
+
+    if (!hasPurchased) {
+      return res.status(403).json({
+        status: "Failure",
+        message: "You can only submit a review for books you have purchased",
+      });
     }
 
     const newReview = await Review.create({

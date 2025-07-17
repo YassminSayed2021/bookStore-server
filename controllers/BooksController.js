@@ -4,36 +4,161 @@ const mongoose = require("mongoose");
 
 exports.getBooks = async (req, res) => {
   try {
-    let { page = 1, limit = 6 } = req.query;
+    const {
+      sort,
+      page = 1,
+      limit = 6,
+      genre,
+      language,
+      priceMin,
+      priceMax,
+    } = req.query;
 
-    page = parseInt(page);
-    limit = parseInt(limit);
+    // Parse page/limit
+    const pageNum = Math.max(parseInt(page), 1);
+    const limitNum = Math.max(parseInt(limit), 1);
+    const skip = (pageNum - 1) * limitNum;
 
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 6;
+    // Build sort option
+    let sortOption;
+    switch (sort) {
+      case "title_asc":
+        sortOption = { title: 1 };
+        break;
+      case "title_desc":
+        sortOption = { title: -1 };
+        break;
+      case "price_asc":
+        sortOption = { price: 1 };
+        break;
+      case "price_desc":
+        sortOption = { price: -1 };
+        break;
+      default:
+        sortOption = { createdAt: -1 };
+    }
 
-    const skip = (page - 1) * limit;
+    console.log("Sort option:", sortOption);
 
-    const books = await Book.find()
-      .sort({ createdAt: -1 })
+    // Build query with filters
+    const query = {};
+
+    // Category/Genre filter
+    if (genre) {
+      if (Array.isArray(genre)) {
+        query.category = { $in: genre };
+      } else {
+        query.category = genre;
+      }
+    }
+
+    // Price filter
+    if (priceMin || priceMax) {
+      query.price = {};
+      if (priceMin) query.price.$gte = Number(priceMin);
+      if (priceMax) query.price.$lte = Number(priceMax);
+    }
+
+    // Language stock filter
+    if (language) {
+      // Map language name to stock key
+      const stockFieldMap = {
+        Arabic: "ar",
+        English: "en",
+        French: "fr",
+      };
+
+      const langKeys = Array.isArray(language) ? language : [language];
+
+      // Build $or to match any selected language with stock > 0
+      query.$or = langKeys
+        .map((lang) => {
+          const key = stockFieldMap[lang];
+          if (!key) return null;
+          return { [`stock.${key}`]: { $gt: 0 } };
+        })
+        .filter(Boolean);
+    }
+
+    // Query with filters
+    const books = await Book.find(query)
+      .sort(sortOption)
       .skip(skip)
-      .limit(limit);
-
-    const total = await Book.countDocuments();
+      .limit(limitNum);
+    const total = await Book.countDocuments(query);
 
     res.status(200).json({
       status: "success",
       page,
       totalPages: Math.ceil(total / limit),
       totalItems: total,
+      totalPages: Math.ceil(total / limitNum),
       results: books.length,
       data: books,
     });
   } catch (err) {
     console.error("Failed to fetch books:", err);
-    res.status(500).json({ message: "Server error." });
+    res.status(500).json({ message: err.message });
   }
 };
+
+// exports.getFilteredBooks = async (req, res) => {
+//   try {
+//     const { genre, language, priceMin, priceMax } = req.query;
+
+//     const query = {};
+
+//     // Category filter
+//     if (genre) {
+//       if (Array.isArray(genre)) {
+//         query.category = { $in: genre };
+//       } else {
+//         query.category = genre;
+//       }
+//     }
+
+//     // Price filter
+//     if (priceMin || priceMax) {
+//       query.price = {};
+//       if (priceMin) query.price.$gte = Number(priceMin);
+//       if (priceMax) query.price.$lte = Number(priceMax);
+//     }
+
+//     // Language stock filter
+//     if (language) {
+//       // Map language name to stock key
+//       const stockFieldMap = {
+//         Arabic: "ar",
+//         English: "en",
+//         French: "fr",
+//       };
+
+//       const langKeys = Array.isArray(language) ? language : [language];
+
+//       // Build $or to match any selected language with stock > 0
+//       query.$or = langKeys
+//         .map((lang) => {
+//           const key = stockFieldMap[lang];
+//           if (!key) return null;
+//           return { [`stock.${key}`]: { $gt: 0 } };
+//         })
+//         .filter(Boolean);
+//     }
+
+//     const books = await Book.find(query).sort({ createdAt: -1 });
+
+//     res.status(200).json({
+//       status: "success",
+//       results: books.length,
+//       data: books,
+//     });
+//   } catch (err) {
+//     console.error("❌ Error in getFilteredBooks:", err.stack);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// =====================================================
 
 exports.getBookById = async (req, res) => {
   try {
@@ -44,14 +169,25 @@ exports.getBookById = async (req, res) => {
       console.log("Invalid ObjectId format");
       return res.status(400).json({ message: "Invalid book ID" });
     }
+  } catch (err) {
+    console.error("Error in getBookById:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
 
-    const book = await Book.findById(bookId);
-    console.log("Book found:", book);
+exports.getBookBySlug = async (req, res) => {
+  try {
+    const book = await Book.findOne({ slug: req.params.slug }).populate(
+      "reviews"
+    );
 
     if (!book) {
-      return res.status(404).json({ message: "Book not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Book not found" });
     }
 
+    res.status(200).json({ success: true, data: book });
     const reviews = await Review.find({ book: book._id });
     const reviewsCount = reviews.length;
     const averageRating = reviewsCount
@@ -66,7 +202,8 @@ exports.getBookById = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Error in getBookById:", err.stack);
-    res.status(500).json({ message: "Server error" });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
