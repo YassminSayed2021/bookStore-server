@@ -37,15 +37,12 @@ app.use(requestLogger); // Custom request logger
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
-app.use(cors({
-  origin: ["http://localhost:4200"],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
-// ======= ROUTES =======
-
+app.use(
+  cors({
+    origin: ["http://localhost:4200"],
+    credentials: true,
+  })
+);
 
 // User and Auth
 app.use("/api/v1/users", usersRoutes);
@@ -74,17 +71,11 @@ app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/wishlist", wishListRoutes);
 app.use("/api/upload", uploadRoutes);
 
-
 //---------------------------
-//chatbot 
 
-// const chatbotRoutes = require("./routes/chatbotRoutes");
-
-// app.use(express.json());
-
-// app.use("/chatbot", chatbotRoutes);
-
-
+app.use(express.json());
+//const chatbotRoutes = require("./routes/chatbotRoutes");
+//app.use("/chatbot", chatbotRoutes);
 
 
 // Search
@@ -99,4 +90,3 @@ app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   await connectDB();
 });
-
