@@ -188,9 +188,9 @@ exports.confirmPayment = async (req, res) => {
       await book.save({ session });
     }
 
-   order.status = 'completed';
+   order.status = 'processing';
     order.paymentIntentId = paymentIntentId; 
-    order.statusHistory.push({ status: 'completed', timestamp: new Date() });
+    order.statusHistory.push({ status: 'processing', timestamp: new Date() });
     await order.save({ session });
 
     const userId = req.user.id;
@@ -233,91 +233,91 @@ exports.confirmPayment = async (req, res) => {
   }
 
 };
-exports.cancelOrder = async (req, res) => {
-  const { orderId } = req.body;
-  const userId = req.user.id;
+// exports.cancelOrder = async (req, res) => {
+//   const { orderId } = req.body;
+//   const userId = req.user.id;
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
 
-  try {
-    const order = await Order.findById(orderId).session(session);
-    if (!order) {
-      await session.abortTransaction();
-      return res.status(404).json({ error: 'Order not found' });
-    }
+//   try {
+//     const order = await Order.findById(orderId).session(session);
+//     if (!order) {
+//       await session.abortTransaction();
+//       return res.status(404).json({ error: 'Order not found' });
+//     }
 
-    if (order.user.toString() !== userId) {
-      await session.abortTransaction();
-      return res.status(403).json({ error: 'Unauthorized to cancel this order' });
-    }
+//     if (order.user.toString() !== userId) {
+//       await session.abortTransaction();
+//       return res.status(403).json({ error: 'Unauthorized to cancel this order' });
+//     }
 
-    if (order.status !== 'completed') {
-      await session.abortTransaction();
-      return res.status(400).json({ error: 'Only completed orders can be cancelled' });
-    }
+//     if (order.status !== 'completed') {
+//       await session.abortTransaction();
+//       return res.status(400).json({ error: 'Only completed orders can be cancelled' });
+//     }
 
-    const orderDate = new Date(order.createdAt);
-    const now = new Date();
-    const hoursDiff = (now - orderDate) / (1000 * 60 * 60);
+//     const orderDate = new Date(order.createdAt);
+//     const now = new Date();
+//     const hoursDiff = (now - orderDate) / (1000 * 60 * 60);
 
-    if (hoursDiff > 24) {
-      await session.abortTransaction();
-      return res.status(400).json({ error: 'Cannot cancel order after 24 hours' });
-    }
+//     if (hoursDiff > 24) {
+//       await session.abortTransaction();
+//       return res.status(400).json({ error: 'Cannot cancel order after 24 hours' });
+//     }
 
-    if (!order.paymentIntentId) {
-      await session.abortTransaction();
-      return res.status(400).json({ error: 'No payment information found for this order' });
-    }
-
-
-    const refund = await stripe.refunds.create({
-      payment_intent: order.paymentIntentId
-    });
+//     if (!order.paymentIntentId) {
+//       await session.abortTransaction();
+//       return res.status(400).json({ error: 'No payment information found for this order' });
+//     }
 
 
-    for (const orderBook of order.books) {
-      const book = await Book.findById(orderBook.book).session(session);
-      if (book) {
-        book.stock[orderBook.language || 'ar'] += orderBook.quantity;
-        await book.save({ session });
-      }
-    }
+//     const refund = await stripe.refunds.create({
+//       payment_intent: order.paymentIntentId
+//     });
 
 
-    order.status = 'cancelled';
-    order.statusHistory.push({
-      status: 'cancelled',
-      timestamp: new Date(),
-      refundStatus: refund.status === 'succeeded' ? 'completed' : 'pending'
-    });
-    await order.save({ session });
-    console.log("✅ Order saved as cancelled");
-    await session.commitTransaction();
+//     for (const orderBook of order.books) {
+//       const book = await Book.findById(orderBook.book).session(session);
+//       if (book) {
+//         book.stock[orderBook.language || 'ar'] += orderBook.quantity;
+//         await book.save({ session });
+//       }
+//     }
 
 
-    await sendUserEmail(req.user.email, 'Your Order Has Been Cancelled', `
-      <h2>Order Cancellation Confirmation</h2>
-      <p>Your order <strong>${order._id}</strong> has been cancelled successfully.</p>
-      <p>Refund Status: ${refund.status === 'succeeded' ? 'Completed' : 'Pending'}</p>
-      <p>Total Refunded: ${order.totalPrice} EGP</p>
-    `);
+//     order.status = 'cancelled';
+//     order.statusHistory.push({
+//       status: 'cancelled',
+//       timestamp: new Date(),
+//       refundStatus: refund.status === 'succeeded' ? 'completed' : 'pending'
+//     });
+//     await order.save({ session });
+//     console.log("✅ Order saved as cancelled");
+//     await session.commitTransaction();
 
-    await sendUserEmail(process.env.ADMIN_EMAIL, 'Order Cancelled Notification', `
-      <h2>Order Cancellation Notification</h2>
-      <p><strong>Order ID:</strong> ${order._id}</p>
-      <p><strong>User:</strong> ${order.user}</p>
-      <p><strong>Total Refunded:</strong> ${order.totalPrice} EGP</p>
-      <p><strong>Refund Status:</strong> ${refund.status}</p>
-    `);
 
-    res.json({ success: true, refundStatus: refund.status });
-  } catch (error) {
-    await session.abortTransaction();
-    console.error('Order cancellation error:', error);
-    res.status(500).json({ error: 'Order cancellation failed' });
-  } finally {
-    session.endSession();
-  }
-};
+//     await sendUserEmail(req.user.email, 'Your Order Has Been Cancelled', `
+//       <h2>Order Cancellation Confirmation</h2>
+//       <p>Your order <strong>${order._id}</strong> has been cancelled successfully.</p>
+//       <p>Refund Status: ${refund.status === 'succeeded' ? 'Completed' : 'Pending'}</p>
+//       <p>Total Refunded: ${order.totalPrice} EGP</p>
+//     `);
+
+//     await sendUserEmail(process.env.ADMIN_EMAIL, 'Order Cancelled Notification', `
+//       <h2>Order Cancellation Notification</h2>
+//       <p><strong>Order ID:</strong> ${order._id}</p>
+//       <p><strong>User:</strong> ${order.user}</p>
+//       <p><strong>Total Refunded:</strong> ${order.totalPrice} EGP</p>
+//       <p><strong>Refund Status:</strong> ${refund.status}</p>
+//     `);
+
+//     res.json({ success: true, refundStatus: refund.status });
+//   } catch (error) {
+//     await session.abortTransaction();
+//     console.error('Order cancellation error:', error);
+//     res.status(500).json({ error: 'Order cancellation failed' });
+//   } finally {
+//     session.endSession();
+//   }
+// };
