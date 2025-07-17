@@ -42,7 +42,7 @@ const orderSchema = mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed', 'paid'],
     default: 'pending'
   },
   paymentIntentId: {
@@ -53,7 +53,7 @@ statusHistory: [
     {
       status: {
         type: String,
-        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
+        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed', 'paid'],
         required: true
       },
       timestamp: {
