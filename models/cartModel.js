@@ -22,6 +22,11 @@ const cartItemSchema = mongoose.Schema(
       ref: "User",
       required: true,
     },
+    stock: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
   },
   { timestamps: true }
 );
