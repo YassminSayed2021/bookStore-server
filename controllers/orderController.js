@@ -5,10 +5,10 @@ const Order = require("../models/ordersModel");
 const User = require("../models/usersModel");
 const OrderConfirmationEmail = require("../utils/orderConfirmationEmail");
 
-const placeOrder = async(req,res)=>{
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try{
+const placeOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
     const userEmail = req.user.email;
     const user = await User.findOne({ email: userEmail });
     if (!user) {
@@ -19,7 +19,7 @@ const placeOrder = async(req,res)=>{
       });
     }
 
-        const cartItems = await CartItem.find({ user: user._id }).populate("book");
+    const cartItems = await CartItem.find({ user: user._id }).populate("book");
     if (cartItems.length === 0) {
       await session.abortTransaction();
       return res.status(400).json({
@@ -31,12 +31,12 @@ const placeOrder = async(req,res)=>{
     let totalPrice = 0;
     const orderBooks = [];
 
-        for (const item of cartItems) {
+    for (const item of cartItems) {
       const { book, quantity, language } = item;
 
       const stock = book.stock?.[language];
 
-            if (stock === undefined) {
+      if (stock === undefined) {
         await session.abortTransaction();
         return res.status(400).json({
           status: "Failure",
@@ -44,7 +44,7 @@ const placeOrder = async(req,res)=>{
         });
       }
 
-            if (quantity > stock) {
+      if (quantity > stock) {
         await session.abortTransaction();
         return res.status(400).json({
           status: "Failure",
@@ -52,15 +52,15 @@ const placeOrder = async(req,res)=>{
         });
       }
 
-            book.stock[language] -= quantity;
+      book.stock[language] -= quantity;
       await book.save({ session });
       totalPrice += book.price * quantity;
-orderBooks.push({
-  book: book._id,
-  quantity,
-  language,
-  price: book.price
-});
+      orderBooks.push({
+        book: book._id,
+        quantity,
+        language,
+        price: book.price,
+      });
     }
     const newOrder = await Order.create(
       [
@@ -76,18 +76,17 @@ orderBooks.push({
     await session.commitTransaction();
     // await OrderConfirmationEmail(user.email, user.firstName, newOrder[0]._id, totalPrice);
     const orderedBooks = cartItems.map((item) => ({
-  title: item.book.title,
-  quantity: item.quantity,
-}));
+      title: item.book.title,
+      quantity: item.quantity,
+    }));
 
-await OrderConfirmationEmail(
-  user.email,
-  user.firstName,
-  newOrder[0]._id,
-  totalPrice,
-  orderedBooks
-);
-
+    await OrderConfirmationEmail(
+      user.email,
+      user.firstName,
+      newOrder[0]._id,
+      totalPrice,
+      orderedBooks
+    );
 
     session.endSession();
 
@@ -96,22 +95,16 @@ await OrderConfirmationEmail(
       message: "Order placed successfully",
       data: newOrder[0],
     });
-
-
-
-    }catch(err){
-await session.abortTransaction();
-session.endSession();
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
     res.status(500).json({
-    status: "Failure",
-    message:"Internal Server Error",
-  error: err.message || err,
+      status: "Failure",
+      message: "Internal Server Error",
+      error: err.message || err,
     });
-
-    }
-}
-
-
+  }
+};
 
 const getOrderHistory = async (req, res) => {
   try {
@@ -120,23 +113,23 @@ const getOrderHistory = async (req, res) => {
     const orders = await Order.find()
       .populate({
         path: "user",
-        match: { email: userEmail }, 
-        select: "firstName email",   
+        match: { email: userEmail },
+        select: "firstName email",
       })
       .populate({
         path: "books.book",
-        select: "title price image", 
+        select: "title price image",
       })
       .sort({ createdAt: -1 });
 
-    const userOrders = orders.filter(order => order.user);
+    const userOrders = orders.filter((order) => order.user);
 
-    const formatted = userOrders.map(order => ({
+    const formatted = userOrders.map((order) => ({
       id: order._id,
       createdAt: order.createdAt,
       status: order.status,
       totalPrice: order.totalPrice,
-      books: order.books.map(item => ({
+      books: order.books.map((item) => ({
         title: item.book?.title || "Deleted Book",
         image: item.book?.image || "",
         price: item.book?.price || 0,
@@ -164,51 +157,53 @@ const getAllOrders = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    
+
     const totalOrders = await Order.countDocuments();
     const totalPages = Math.ceil(totalOrders / limit);
-    
+
     const orders = await Order.find()
       .populate({
         path: "user",
-        select: "firstName lastName email"
+        select: "firstName lastName email",
       })
       .populate({
         path: "books.book",
-        select: "title price image"
+        select: "title price image",
       })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-    
-    const formattedOrders = orders.map(order => ({
+
+    const formattedOrders = orders.map((order) => ({
       id: order._id,
-      customer: order.user ? `${order.user.firstName} ${order.user.lastName}` : "Unknown User",
+      customer: order.user
+        ? `${order.user.firstName} ${order.user.lastName}`
+        : "Unknown User",
       email: order.user ? order.user.email : "Unknown",
       date: order.createdAt,
       status: order.status,
       totalPrice: order.totalPrice,
-      books: order.books.map(item => ({
+      books: order.books.map((item) => ({
         title: item.book?.title || "Deleted Book",
         image: item.book?.image || "",
         price: item.price,
         quantity: item.quantity,
-        language: item.language
-      }))
+        language: item.language,
+      })),
     }));
-    
+
     res.status(200).json({
       status: "Success",
       count: formattedOrders.length,
       totalPages,
       currentPage: page,
-      data: formattedOrders
+      data: formattedOrders,
     });
   } catch (err) {
     res.status(500).json({
       status: "Failure",
       message: "Error fetching orders",
-      error: err.message || err
+      error: err.message || err,
     });
   }
 };
@@ -217,51 +212,53 @@ const getAllOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const orderId = req.params.id;
-    
+
     const order = await Order.findById(orderId)
       .populate({
         path: "user",
-        select: "firstName lastName email"
+        select: "firstName lastName email",
       })
       .populate({
         path: "books.book",
-        select: "title price image"
+        select: "title price image",
       });
-    
+
     if (!order) {
       return res.status(404).json({
         status: "Failure",
-        message: "Order not found"
+        message: "Order not found",
       });
     }
-    
+
     const formattedOrder = {
       _id: order._id, // Ensure ID is included
-      id: order._id,  // Include both formats for compatibility
+      id: order._id, // Include both formats for compatibility
       orderNumber: order.orderNumber || order._id.toString().substr(-6),
-      customer: order.user ? `${order.user.firstName} ${order.user.lastName}` : "Unknown User",
+      customer: order.user
+        ? `${order.user.firstName} ${order.user.lastName}`
+        : "Unknown User",
       email: order.user ? order.user.email : "Unknown",
       date: order.createdAt,
       status: order.status,
       totalPrice: order.totalPrice,
-      books: order.books.map(item => ({
+      books: order.books.map((item) => ({
         title: item.book?.title || "Deleted Book",
         image: item.book?.image || "",
         price: item.price,
         quantity: item.quantity,
-        language: item.language
-      }))
+        language: item.language,
+      })),
     };
-    
+
     res.status(200).json({
       status: "Success",
-      data: formattedOrder
+      data: formattedOrder,
     });
   } catch (err) {
     res.status(500).json({
       status: "Failure",
       message: "Error fetching order",
-      error: err.message || err
+      error: err.message || err,
     });
   }
 };
@@ -271,46 +268,53 @@ const updateOrderStatus = async (req, res) => {
   try {
     const orderId = req.params.id;
     const { status } = req.body;
-    
+
     if (!status) {
       return res.status(400).json({
         status: "Failure",
-        message: "Status is required"
+        message: "Status is required",
       });
     }
-    
+
     // Validate status
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'];
+    const validStatuses = [
+      "pending",
+      "processing",
+      "shipped",
+      "delivered",
+      "cancelled",
+      "completed",
+    ];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         status: "Failure",
-        message: "Invalid status value"
+        message: "Invalid status value",
       });
     }
-    
+
     const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
       { status },
       { new: true }
     );
-    
+
     if (!updatedOrder) {
       return res.status(404).json({
         status: "Failure",
-        message: "Order not found"
+        message: "Order not found",
       });
     }
-    
+
     res.status(200).json({
       status: "Success",
       message: "Order status updated successfully",
-      data: updatedOrder
+      data: updatedOrder,
     });
   } catch (err) {
     res.status(500).json({
       status: "Failure",
       message: "Error updating order status",
-      error: err.message || err
+      error: err.message || err,
     });
   }
 };
@@ -319,25 +323,25 @@ const updateOrderStatus = async (req, res) => {
 const deleteOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
-    
+
     const deletedOrder = await Order.findByIdAndDelete(orderId);
-    
+
     if (!deletedOrder) {
       return res.status(404).json({
         status: "Failure",
-        message: "Order not found"
+        message: "Order not found",
       });
     }
-    
+
     res.status(200).json({
       status: "Success",
-      message: "Order deleted successfully"
+      message: "Order deleted successfully",
     });
   } catch (err) {
     res.status(500).json({
       status: "Failure",
       message: "Error deleting order",
-      error: err.message || err
+      error: err.message || err,
     });
   }
 };
@@ -346,32 +350,34 @@ const deleteOrder = async (req, res) => {
 const getRecentOrders = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 5;
-    
+
     const orders = await Order.find()
       .populate({
         path: "user",
-        select: "firstName lastName email"
+        select: "firstName lastName email",
       })
       .sort({ createdAt: -1 })
       .limit(limit);
-    
-    const formattedOrders = orders.map(order => ({
+
+    const formattedOrders = orders.map((order) => ({
       id: order._id,
-      customer: order.user ? `${order.user.firstName} ${order.user.lastName}` : "Unknown User",
-      date: order.createdAt.toISOString().split('T')[0],
+      customer: order.user
+        ? `${order.user.firstName} ${order.user.lastName}`
+        : "Unknown User",
+      date: order.createdAt.toISOString().split("T")[0],
       total: order.totalPrice,
-      status: order.status
+      status: order.status,
     }));
-    
+
     res.status(200).json({
       status: "Success",
-      data: formattedOrders
+      data: formattedOrders,
     });
   } catch (err) {
     res.status(500).json({
       status: "Failure",
       message: "Error fetching recent orders",
-      error: err.message || err
+      error: err.message || err,
     });
   }
 };
@@ -383,6 +389,5 @@ module.exports = {
   getOrderById,
   updateOrderStatus,
   deleteOrder,
-  getRecentOrders
+  getRecentOrders,
 };
-    

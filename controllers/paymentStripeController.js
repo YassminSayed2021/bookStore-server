@@ -1,12 +1,9 @@
-
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const mongoose = require("mongoose");
 const Book = require("../models/booksModel");
 const Order = require("../models/ordersModel");
-const CartItem = require("../models/cartModel"); 
+const CartItem = require("../models/cartModel");
 const nodemailer = require("nodemailer");
-
-
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -18,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 const sendUserEmail = async (to, subject, html) => {
   await transporter.sendMail({
-    from: 'BookStore 📚 <' + process.env.MY_EMAIL + '>',
+    from: "BookStore 📚 <" + process.env.MY_EMAIL + ">",
     to,
     subject,
     html,
@@ -56,8 +53,8 @@ exports.createCheckout = async (req, res) => {
     let lineItems = [];
     let totalAmount = 0;
     let orderBooks = [];
- let cart = cartItems;
-   
+    let cart = cartItems;
+
     if (!cartItems || cartItems.length === 0) {
       const userCart = await CartItem.find({ user: userId }).lean();
       if (!userCart.length) {
@@ -91,15 +88,21 @@ exports.createCheckout = async (req, res) => {
         });
 
         totalAmount += book.price * quantity;
-        orderBooks.push({ book: productId, quantity, language,price: book.price });
+        orderBooks.push({
+          book: productId,
+          quantity,
+          language,
+          price: book.price,
+        });
       }
     } else if (productId && quantity) {
-      
       const book = await Book.findById(productId).session(session);
 
       if (!book || book.stock[language] < quantity) {
         await session.abortTransaction();
-        return res.status(400).json({ error: "Product out of stock or not found" });
+        return res
+          .status(400)
+          .json({ error: "Product out of stock or not found" });
       }
 
       lineItems.push({
@@ -112,7 +115,12 @@ exports.createCheckout = async (req, res) => {
       });
 
       totalAmount = book.price * quantity;
-      orderBooks.push({ book: productId, quantity, language ,price: book.price});
+      orderBooks.push({
+        book: productId,
+        quantity,
+        language,
+        price: book.price,
+      });
     } else {
       await session.abortTransaction();
       return res.status(400).json({ error: "Missing product or cart items" });
@@ -125,14 +133,17 @@ exports.createCheckout = async (req, res) => {
       metadata: { userId },
     });
 
-    const [order] = await Order.create([
-      {
-        user: userId,
-        books: orderBooks,
-        totalPrice: totalAmount,
-        status: "pending",
-      },
-    ], { session });
+    const [order] = await Order.create(
+      [
+        {
+          user: userId,
+          books: orderBooks,
+          totalPrice: totalAmount,
+          status: "pending",
+        },
+      ],
+      { session }
+    );
 
     await session.commitTransaction();
 
@@ -157,14 +168,18 @@ exports.confirmPayment = async (req, res) => {
   const { paymentIntentId, orderId, mode } = req.body;
 
   if (!paymentIntentId || !orderId) {
-    return res.status(400).json({ error: "Missing paymentIntentId or orderId" });
+    return res
+      .status(400)
+      .json({ error: "Missing paymentIntentId or orderId" });
   }
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const confirmedPaymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const confirmedPaymentIntent = await stripe.paymentIntents.retrieve(
+      paymentIntentId
+    );
 
     if (confirmedPaymentIntent.status !== "succeeded") {
       await session.abortTransaction();
@@ -179,28 +194,35 @@ exports.confirmPayment = async (req, res) => {
 
     for (const orderBook of order.books) {
       const book = await Book.findById(orderBook.book).session(session);
-      if (!book || book.stock[orderBook.language || 'ar'] < orderBook.quantity) {
+      if (
+        !book ||
+        book.stock[orderBook.language || "ar"] < orderBook.quantity
+      ) {
         await session.abortTransaction();
-        return res.status(400).json({ error: `Stock no longer available for ${book?.title || 'Unknown'}` });
+        return res
+          .status(400)
+          .json({
+            error: `Stock no longer available for ${book?.title || "Unknown"}`,
+          });
       }
 
-      book.stock[orderBook.language || 'ar'] -= orderBook.quantity;
+      book.stock[orderBook.language || "ar"] -= orderBook.quantity;
       await book.save({ session });
     }
 
-   order.status = 'processing';
-    order.paymentIntentId = paymentIntentId; 
-    order.statusHistory.push({ status: 'processing', timestamp: new Date() });
+    order.status = "processing";
+    order.paymentIntentId = paymentIntentId;
+    order.statusHistory.push({ status: "processing", timestamp: new Date() });
     await order.save({ session });
 
     const userId = req.user.id;
 
-    if (mode === 'buyNow') {
+    if (mode === "buyNow") {
       for (const orderBook of order.books) {
         await CartItem.deleteOne({
           user: userId,
           book: orderBook.book,
-          language: orderBook.language
+          language: orderBook.language,
         });
       }
     } else {
@@ -209,19 +231,24 @@ exports.confirmPayment = async (req, res) => {
 
     await session.commitTransaction();
 
-
-     try {
+    try {
       await notifyAdmin(order);
     } catch (emailError) {
-      console.error('❌ Admin email failed, but payment processed:', emailError);
-
+      console.error(
+        "❌ Admin email failed, but payment processed:",
+        emailError
+      );
     }
 
-    await sendUserEmail(req.user.email, "Your Payment was Successful ✅", `
+    await sendUserEmail(
+      req.user.email,
+      "Your Payment was Successful ✅",
+      `
       <h2>Thank you for your purchase!</h2>
       <p>Your order <strong>${order._id}</strong> has been completed successfully.</p>
       <p>Total Paid: ${order.totalPrice} EGP</p>
-    `);
+    `
+    );
 
     res.json({ success: true });
   } catch (error) {
@@ -231,7 +258,6 @@ exports.confirmPayment = async (req, res) => {
   } finally {
     session.endSession();
   }
-
 };
 // exports.cancelOrder = async (req, res) => {
 //   const { orderId } = req.body;
@@ -271,11 +297,9 @@ exports.confirmPayment = async (req, res) => {
 //       return res.status(400).json({ error: 'No payment information found for this order' });
 //     }
 
-
 //     const refund = await stripe.refunds.create({
 //       payment_intent: order.paymentIntentId
 //     });
-
 
 //     for (const orderBook of order.books) {
 //       const book = await Book.findById(orderBook.book).session(session);
@@ -284,7 +308,6 @@ exports.confirmPayment = async (req, res) => {
 //         await book.save({ session });
 //       }
 //     }
-
 
 //     order.status = 'cancelled';
 //     order.statusHistory.push({
@@ -295,7 +318,6 @@ exports.confirmPayment = async (req, res) => {
 //     await order.save({ session });
 //     console.log("✅ Order saved as cancelled");
 //     await session.commitTransaction();
-
 
 //     await sendUserEmail(req.user.email, 'Your Order Has Been Cancelled', `
 //       <h2>Order Cancellation Confirmation</h2>

@@ -40,14 +40,13 @@ exports.getBooks = async (req, res) => {
     if (genre) {
       const fieldToQuery = "category.name";
       if (Array.isArray(genre)) {
-        const genreRegexes = genre.map(g => new RegExp(`^${g}$`, 'i'));
+        const genreRegexes = genre.map((g) => new RegExp(`^${g}$`, "i"));
         query[fieldToQuery] = { $in: genreRegexes };
       } else {
-        query[fieldToQuery] = { $regex: new RegExp(`^${genre}$`, 'i') };
+        query[fieldToQuery] = { $regex: new RegExp(`^${genre}$`, "i") };
       }
 
       //query.category = Array.isArray(genre) ? { $in: genre } : genre;
-
     }
 
     // Price filter
@@ -125,7 +124,6 @@ exports.getBookById = async (req, res) => {
     // Note: This function doesn't do anything with the ID yet.
     // You would typically fetch and return a book here.
     res.status(200).json({ message: "Book ID is valid." });
-
   } catch (err) {
     console.error("Error in getBookById:", err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -134,9 +132,9 @@ exports.getBookById = async (req, res) => {
 
 exports.getBookBySlug = async (req, res) => {
   try {
-    const book = await Book.findOne({ slug: req.params.slug }).populate(
-      "reviews"
-    ).lean(); // Use .lean() for a plain JS object to allow modification
+    const book = await Book.findOne({ slug: req.params.slug })
+      .populate("reviews")
+      .lean(); // Use .lean() for a plain JS object to allow modification
 
     if (!book) {
       return res
@@ -160,10 +158,9 @@ exports.getBookBySlug = async (req, res) => {
     };
 
     res.status(200).json({
-        success: true,
-        data: responseData
+      success: true,
+      data: responseData,
     });
-
   } catch (err) {
     res
       .status(500)
