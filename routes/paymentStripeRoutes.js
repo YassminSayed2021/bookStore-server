@@ -6,6 +6,6 @@ const authMiddleware = require("../middlewares/payValidation");
 
 router.post("/checkout", authMiddleware, paymentController.createCheckout);
 router.post("/checkout/confirm", authMiddleware, paymentController.confirmPayment);
-router.post('/cancel', authMiddleware, paymentController.cancelOrder);
+// "router.post('/cancel', authMiddleware, paymentController.cancelOrder);"
 
 module.exports = router;
