@@ -1,4 +1,6 @@
 require("dotenv").config();
+require('./jobs/clearPendingOrders');
+
 const express = require("express");
 
 const mongoose = require("mongoose");
@@ -38,12 +40,14 @@ app.use(requestLogger); // Custom request logger
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+
 app.use(
   cors({
     origin: ["http://localhost:4200"],
     credentials: true,
   })
 );
+
 
 // User and Auth
 app.use("/api/v1/users", usersRoutes);
@@ -100,6 +104,6 @@ app.use(errorHandler);
 // ======= SERVER =======
 const PORT = process.env.DB_PORT || 3000;
 app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
   await connectDB();
 });

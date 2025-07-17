@@ -68,6 +68,7 @@ const placeOrder = async (req, res) => {
           user: user._id,
           books: orderBooks,
           totalPrice,
+          paymentMethod: 'paypal',
         },
       ],
       { session }
@@ -277,14 +278,9 @@ const updateOrderStatus = async (req, res) => {
     }
 
     // Validate status
-    const validStatuses = [
-      "pending",
-      "processing",
-      "shipped",
-      "delivered",
-      "cancelled",
-      "completed",
-    ];
+
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed','paid'];
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         status: "Failure",
