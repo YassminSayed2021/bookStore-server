@@ -12,8 +12,18 @@ router.post("/", verifyToken, admin, adminController.createUser); // New route f
 router.patch("/:id", verifyToken, admin, adminController.updateUser);
 router.delete("/:id", verifyToken, admin, adminController.deleteUser);
 
-router.get("/metrics/users", adminController.getTotalUsers);
-router.get("/metrics/orders", adminController.getTotalOrders);
-router.get("/metrics/revenue", adminController.getTotalRevenue);
+router.get("/metrics/users", verifyToken, admin, adminController.getTotalUsers);
+router.get(
+  "/metrics/orders",
+  verifyToken,
+  admin,
+  adminController.getTotalOrders
+);
+router.get(
+  "/metrics/revenue",
+  verifyToken,
+  admin,
+  adminController.getTotalRevenue
+);
 
 module.exports = router;
