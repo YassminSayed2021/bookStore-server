@@ -29,6 +29,7 @@
     "mongoose": "^8.16.1",
     "multer": "^2.0.1",
     "ngx-toastr": "^19.0.0",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
     "otp-generator": "^4.0.1",
     "slugify": "^1.6.6",

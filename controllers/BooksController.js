@@ -1,14 +1,18 @@
 const Book = require("../models/booksModel");
 const Review = require("../models/reviewModel");
 const mongoose = require("mongoose");
+
 exports.getBooks = async (req, res) => {
   try {
-    const { sort, page = 1, limit = 6, genre, language, priceMin, priceMax } = req.query;
-
-    // Parse page/limit
-    const pageNum = Math.max(parseInt(page), 1);
-    const limitNum = Math.max(parseInt(limit), 1);
-    const skip = (pageNum - 1) * limitNum;
+    const {
+      sort,
+      page = 1,
+      limit = 6,
+      genre,
+      language,
+      priceMin,
+      priceMax,
+    } = req.query;
 
     // Build sort option
     let sortOption;
@@ -29,18 +33,20 @@ exports.getBooks = async (req, res) => {
         sortOption = { createdAt: -1 };
     }
 
-    console.log("Sort option:", sortOption);
-
     // Build query with filters
     const query = {};
 
-    // Category/Genre filter
+    // FIX: Correctly query the nested 'category.name' field with case-insensitivity
     if (genre) {
+      const fieldToQuery = "category.name";
       if (Array.isArray(genre)) {
-        query.category = { $in: genre };
+        const genreRegexes = genre.map((g) => new RegExp(`^${g}$`, "i"));
+        query[fieldToQuery] = { $in: genreRegexes };
       } else {
-        query.category = genre;
+        query[fieldToQuery] = { $regex: new RegExp(`^${genre}$`, "i") };
       }
+
+      //query.category = Array.isArray(genre) ? { $in: genre } : genre;
     }
 
     // Price filter
@@ -52,7 +58,6 @@ exports.getBooks = async (req, res) => {
 
     // Language stock filter
     if (language) {
-      // Map language name to stock key
       const stockFieldMap = {
         Arabic: "ar",
         English: "en",
@@ -61,27 +66,41 @@ exports.getBooks = async (req, res) => {
 
       const langKeys = Array.isArray(language) ? language : [language];
 
-      // Build $or to match any selected language with stock > 0
       query.$or = langKeys
         .map((lang) => {
           const key = stockFieldMap[lang];
-          if (!key) return null;
-          return { [`stock.${key}`]: { $gt: 0 } };
+          return key ? { [`stock.${key}`]: { $gt: 0 } } : null;
         })
         .filter(Boolean);
     }
 
-    // Query with filters
-    const books = await Book.find(query).sort(sortOption).skip(skip).limit(limitNum);
-    const total = await Book.countDocuments(query);
+    let books;
+    let total;
+
+    // If sorting is requested, return all sorted without pagination
+    if (sort) {
+      books = await Book.find(query).sort(sortOption);
+      total = books.length;
+    } else {
+      const pageNum = Math.max(parseInt(page), 1);
+      const limitNum = Math.max(parseInt(limit), 1);
+      const skip = (pageNum - 1) * limitNum;
+
+      books = await Book.find(query)
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limitNum);
+
+      total = await Book.countDocuments(query);
+    }
 
     res.status(200).json({
       status: "success",
       sort,
-      page: pageNum,
-      limit: limitNum,
+      page: sort ? 1 : parseInt(page),
+      limit: sort ? total : parseInt(limit),
       totalItems: total,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: sort ? 1 : Math.ceil(total / limit),
       results: books.length,
       data: books,
     });
@@ -90,62 +109,6 @@ exports.getBooks = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-// exports.getFilteredBooks = async (req, res) => {
-//   try {
-//     const { genre, language, priceMin, priceMax } = req.query;
-
-//     const query = {};
-
-//     // Category filter
-//     if (genre) {
-//       if (Array.isArray(genre)) {
-//         query.category = { $in: genre };
-//       } else {
-//         query.category = genre;
-//       }
-//     }
-
-//     // Price filter
-//     if (priceMin || priceMax) {
-//       query.price = {};
-//       if (priceMin) query.price.$gte = Number(priceMin);
-//       if (priceMax) query.price.$lte = Number(priceMax);
-//     }
-
-//     // Language stock filter
-//     if (language) {
-//       // Map language name to stock key
-//       const stockFieldMap = {
-//         Arabic: "ar",
-//         English: "en",
-//         French: "fr",
-//       };
-
-//       const langKeys = Array.isArray(language) ? language : [language];
-
-//       // Build $or to match any selected language with stock > 0
-//       query.$or = langKeys
-//         .map((lang) => {
-//           const key = stockFieldMap[lang];
-//           if (!key) return null;
-//           return { [`stock.${key}`]: { $gt: 0 } };
-//         })
-//         .filter(Boolean);
-//     }
-
-//     const books = await Book.find(query).sort({ createdAt: -1 });
-
-//     res.status(200).json({
-//       status: "success",
-//       results: books.length,
-//       data: books,
-//     });
-//   } catch (err) {
-//     console.error("❌ Error in getFilteredBooks:", err.stack);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 // =====================================================
 
@@ -158,6 +121,9 @@ exports.getBookById = async (req, res) => {
       console.log("Invalid ObjectId format");
       return res.status(400).json({ message: "Invalid book ID" });
     }
+    // Note: This function doesn't do anything with the ID yet.
+    // You would typically fetch and return a book here.
+    res.status(200).json({ message: "Book ID is valid." });
   } catch (err) {
     console.error("Error in getBookById:", err);
     res.status(500).json({ message: "Server error", error: err.message });
@@ -166,9 +132,9 @@ exports.getBookById = async (req, res) => {
 
 exports.getBookBySlug = async (req, res) => {
   try {
-    const book = await Book.findOne({ slug: req.params.slug }).populate(
-      "reviews"
-    );
+    const book = await Book.findOne({ slug: req.params.slug })
+      .populate("reviews")
+      .lean(); // Use .lean() for a plain JS object to allow modification
 
     if (!book) {
       return res
@@ -176,19 +142,24 @@ exports.getBookBySlug = async (req, res) => {
         .json({ success: false, message: "Book not found" });
     }
 
-    res.status(200).json({ success: true, data: book });
+    // FIX: The original code sent two responses, which causes a crash.
+    // This has been fixed by calculating review data and sending one combined response.
     const reviews = await Review.find({ book: book._id });
     const reviewsCount = reviews.length;
     const averageRating = reviewsCount
       ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviewsCount
       : 0;
 
+    // Combine book data with calculated review data
+    const responseData = {
+      ...book,
+      reviewsCount,
+      averageRating: Number(averageRating.toFixed(1)),
+    };
+
     res.status(200).json({
-      data: {
-        ...book,
-        reviewsCount,
-        averageRating: Number(averageRating.toFixed(1)),
-      },
+      success: true,
+      data: responseData,
     });
   } catch (err) {
     res
