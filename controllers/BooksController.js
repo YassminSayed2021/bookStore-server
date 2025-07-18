@@ -13,7 +13,6 @@ exports.getBooks = async (req, res) => {
       priceMax,
     } = req.query;
 
-    // Build sort option
     let sortOption;
     switch (sort) {
       case "title_asc":

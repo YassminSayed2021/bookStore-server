@@ -7,7 +7,7 @@ exports.addToCart = async (req, res) => {
   try {
     const { bookId, quantity, language } = req.body;
     const qty = parseInt(quantity, 10) || 1;
-    const lang = language || "en";
+    let lang = language;
     const userId = req.user.id;
 
     if (!bookId) {
@@ -25,8 +25,18 @@ exports.addToCart = async (req, res) => {
         message: "Book not found.",
       });
     }
+    if (!lang) {
+      for (const key in book.stock) {
+        if (book.stock[key] > 0) {
+          lang = key;
+          break;
+        }
+      }
+    }
+    console.log(lang);
 
     const stock = book.stock?.[lang];
+
     if (stock === undefined) {
       return res.status(400).json({
         status: "fail",
