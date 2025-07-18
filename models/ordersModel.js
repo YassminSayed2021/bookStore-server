@@ -3,6 +3,10 @@ const bcrypt = require('bcrypt');
 const mailSender = require('../utils/mailSender');
 
 const orderSchema = mongoose.Schema({
+     paymentMethod:{
+    type: String,
+    enum: ['paypal','stripe'],
+ },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -42,7 +46,7 @@ const orderSchema = mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed', 'paid'],
     default: 'pending'
   },
   paymentIntentId: {
@@ -53,7 +57,7 @@ statusHistory: [
     {
       status: {
         type: String,
-        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed'],
+        enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed', 'paid'],
         required: true
       },
       timestamp: {
