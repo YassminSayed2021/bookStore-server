@@ -5,13 +5,18 @@ const Order = require("../models/ordersModel");
 const User = require("../models/usersModel");
 const OrderConfirmationEmail = require("../utils/orderConfirmationEmail");
 
+
 const placeOrder = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     const userEmail = req.user.email;
+    //Log user email
+    console.log("User email:", userEmail);
     const user = await User.findOne({ email: userEmail });
     if (!user) {
+      
+
       await session.abortTransaction();
       return res.status(404).json({
         status: "Failure",
@@ -21,6 +26,8 @@ const placeOrder = async (req, res) => {
 
     const cartItems = await CartItem.find({ user: user._id }).populate("book");
     if (cartItems.length === 0) {
+
+
       await session.abortTransaction();
       return res.status(400).json({
         status: "Failure",
@@ -34,7 +41,9 @@ const placeOrder = async (req, res) => {
     for (const item of cartItems) {
       const { book, quantity, language } = item;
 
+
       const stock = book.stock?.[language];
+
 
       if (stock === undefined) {
         await session.abortTransaction();
@@ -44,6 +53,7 @@ const placeOrder = async (req, res) => {
         });
       }
 
+
       if (quantity > stock) {
         await session.abortTransaction();
         return res.status(400).json({
@@ -51,6 +61,7 @@ const placeOrder = async (req, res) => {
           message: `Only ${stock} left in stock for ${book.title}`,
         });
       }
+
 
       book.stock[language] -= quantity;
       await book.save({ session });
@@ -62,6 +73,8 @@ const placeOrder = async (req, res) => {
         price: book.price,
       });
     }
+
+
     const newOrder = await Order.create(
       [
         {
@@ -73,11 +86,17 @@ const placeOrder = async (req, res) => {
       ],
       { session }
     );
+
     await CartItem.deleteMany({ user: user._id }, { session });
+
     await session.commitTransaction();
+
+
     // await OrderConfirmationEmail(user.email, user.firstName, newOrder[0]._id, totalPrice);
     const orderedBooks = cartItems.map((item) => ({
-      title: item.book.title,
+ 
+
+ title: item.book.title,
       quantity: item.quantity,
     }));
 
@@ -88,6 +107,21 @@ const placeOrder = async (req, res) => {
       totalPrice,
       orderedBooks
     );
+
+//notification to the admin using WebSocket
+const io = req.app.locals.io;
+console.log("🔥🔥🔥 About to emit socket from placeOrder()");
+
+io.emit("newOrderNotification", {
+  user:{
+    name:user.firstName,
+    email:user.email
+  },
+  orderId: newOrder[0]._id,
+  totalPrice,
+  orderedBooks
+});
+
 
     session.endSession();
 
