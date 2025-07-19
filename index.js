@@ -1,5 +1,5 @@
 require("dotenv").config();
-require('./jobs/clearPendingOrders');
+require("./jobs/clearPendingOrders");
 
 const express = require("express");
 
@@ -48,7 +48,6 @@ app.use(
   })
 );
 
-
 // User and Auth
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/auth", authRoutes);
@@ -72,8 +71,8 @@ app.use("/api/v1/paypal", paypalRoutes);
 app.use("/api/payment", paymentStripe); // Uncomment when needed
 
 // Cart, Wishlist, Upload
-app.use("/api/cart", cartRoutes);
-app.use("/api/wishList", wishListRoutes);
+app.use("/api/v1/cart", cartRoutes);
+app.use("/api/v1/wishList", wishListRoutes);
 // app.use("/api/cloud", uploadRoute);
 // ===================
 const bestsellersRoutes = require("./routes/bestsellersRoutes");
@@ -83,8 +82,6 @@ app.use("/api/v1/bestsellers", bestsellersRoutes);
 //chatbot
 
 // const chatbotRoutes = require("./routes/chatbotRoutes");
-
-app.use(express.json());
 
 // app.use("/chatbot", chatbotRoutes);
 
@@ -99,7 +96,6 @@ app.use(express.json());
 app.use("/api/v1", searchRoutes);
 
 // Global Error Handler
-app.use(errorHandler);
 
 // ======= SERVER =======
 const PORT = process.env.DB_PORT || 3000;
