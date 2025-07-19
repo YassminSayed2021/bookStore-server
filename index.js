@@ -81,7 +81,7 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/bookmang", bookManagementRoutes);
 
 // Book, Review & Category
-app.use("/api/v1/books", booksRoutes);
+app.use("/api/v1/book", booksRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 
@@ -92,7 +92,7 @@ app.use("/api/payment", paymentStripe); // Uncomment when needed
 
 // Cart, Wishlist, Upload
 app.use("/api/v1/cart", cartRoutes);
-app.use("/api/wishList", wishListRoutes);
+app.use("/api/v1/wishList", wishListRoutes);
 // app.use("/api/cloud", uploadRoute);
 // ===================
 const bestsellersRoutes = require("./routes/bestsellersRoutes");
@@ -103,7 +103,7 @@ const chatbotRoutes = require("./routes/chatbotRoutes");
 app.use("/chatbot", chatbotRoutes);
 
 // Search
-app.use("/api/v1", searchRoutes);
+app.use("/api/v1/search", searchRoutes);
 
 //test socket
 app.get("/test-socket", (req, res) => {
@@ -132,7 +132,7 @@ io.on("connection", (socket) => {
 // ======= SERVER =======
 const PORT = process.env.DB_PORT || 3000;
 
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
 
   await connectDB();
