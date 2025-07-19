@@ -4,6 +4,8 @@ require('./jobs/clearPendingOrders');
 const express = require("express");
 
 
+
+
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
 
@@ -71,7 +73,7 @@ app.use("/api/v1/bookmang", bookManagementRoutes);
 
 // Book, Review & Category
 app.use("/api/v1/books", booksRoutes);
-app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/review", reviewRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 
 // Orders, Payment
