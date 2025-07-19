@@ -66,7 +66,6 @@
  *         description: Book not found
  */
 
-
 const express = require("express");
 const router = express.Router();
 bookController = require("../controllers/BooksController");
