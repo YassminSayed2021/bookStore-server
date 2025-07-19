@@ -3,6 +3,11 @@ require('./jobs/clearPendingOrders');
 
 const express = require("express");
 
+
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
+
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const cors = require("cors");
@@ -52,6 +57,9 @@ const io = socketIo(server,{
 
 app.locals.io = io;
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
 // ======= MIDDLEWARES =======
 app.use(requestLogger); // Custom request logger
 app.use(express.json());
@@ -89,7 +97,7 @@ app.use("/api/v1/paypal", paypalRoutes);
 app.use("/api/payment", paymentStripe); // Uncomment when needed
 
 // Cart, Wishlist, Upload
-app.use("/api/cart", cartRoutes);
+app.use("/api/v1/cart", cartRoutes);
 app.use("/api/wishList", wishListRoutes);
 // app.use("/api/cloud", uploadRoute);
 // ===================
@@ -134,11 +142,9 @@ socket.on("disconnect", ()=>{
 // ======= SERVER =======
 const PORT = process.env.DB_PORT || 3000;
 
-server.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
 
-// app.listen(PORT, async () => {
-//   console.log(`Server running on port ${PORT}`);
 
   await connectDB();
 });
