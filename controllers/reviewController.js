@@ -4,6 +4,23 @@ const User = require("../models/usersModel");
 const Order = require("../models/ordersModel");
 const { isValidObjectId } = require("mongoose");
 const { validationResult, body } = require("express-validator");
+const Filter = require('bad-words');
+
+
+
+function isSpamReview(text) {
+  const spamWords = ["buy now", "limited offer", "click here", "guaranteed", "free"];
+  const lowerText = text.toLowerCase();
+  const exclamations = (text.match(/!/g) || []).length;
+
+  return (
+    spamWords.some(word => lowerText.includes(word)) ||
+    exclamations > 3 ||
+    text.length < 10
+  );
+}
+
+
 
 
 
@@ -97,6 +114,7 @@ const submitReview = async(req, res)=>{
 
     try{
     const data = req.body;
+
     const { slug } = req.params;
 const userData = await User.findOne({ email: req.user.email });
 
@@ -155,6 +173,23 @@ const userId = userData._id;
       });
     }
 
+    const filter = new Filter();
+
+if (filter.isProfane(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review contains inappropriate language.",
+  });
+}
+
+if (isSpamReview(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review appears to be spammy or too short.",
+  });
+}
+
+
     const newReview = await Review.create({
       user: userId,
       book: bookId,
@@ -194,6 +229,24 @@ const updateReview = async(req,res)=>{
 try{
 const {slug} = req.params;
 const data = req.body;
+
+
+const filter = new Filter();
+
+if (filter.isProfane(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review contains inappropriate language.",
+  });
+}
+
+if (isSpamReview(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review appears to be spammy or too short.",
+  });
+}
+
 
     const userData = await User.findOne({ email: req.user.email });
     if (!userData) {

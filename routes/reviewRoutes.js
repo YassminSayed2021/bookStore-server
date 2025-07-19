@@ -1,13 +1,13 @@
 /**
  * @swagger
  * tags:
- *   name: Reviews
+ *   name: Review
  *   description: Review routes for books
  */
 
 /**
  * @swagger
- * /reviews:
+ * /review:
  *   get:
  *     summary: Get all reviews
  *     tags: [Reviews]
@@ -18,7 +18,7 @@
 
 /**
  * @swagger
- * /reviews/{slug}:
+ * /review/{slug}:
  *   get:
  *     summary: Get reviews for a specific book
  *     tags: [Reviews]
@@ -36,7 +36,7 @@
 
 /**
  * @swagger
- * /reviews/{slug}:
+ * /review/{slug}:
  *   post:
  *     summary: Submit a new review for a book
  *     tags: [Reviews]
@@ -71,7 +71,7 @@
 
 /**
  * @swagger
- * /reviews/{slug}:
+ * /review/{slug}:
  *   patch:
  *     summary: Update an existing review
  *     tags: [Reviews]
@@ -105,7 +105,7 @@
 
 /**
  * @swagger
- * /reviews/{slug}:
+ * /review/{slug}:
  *   delete:
  *     summary: Delete a review
  *     tags: [Reviews]
