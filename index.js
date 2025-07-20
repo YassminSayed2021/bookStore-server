@@ -81,7 +81,7 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/bookmang", bookManagementRoutes);
 
 // Book, Review & Category
-app.use("/api/v1/book", booksRoutes);
+app.use("/api/v1/books", booksRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 
