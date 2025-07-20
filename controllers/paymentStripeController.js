@@ -28,7 +28,7 @@ const notifyAdmin = async (order) => {
   const html = `
     <h2>New Order Notification</h2>
     <p><strong>Order ID:</strong> ${order._id}</p>
-    <p><strong>User:</strong> ${order.user}</p>
+    <p><strong>User:</strong> ${firstName}</p>
     <p><strong>Total:</strong> ${order.totalPrice} EGP</p>
       <p><strong>Status:</strong> ${order.status}</p>
     <p>View the order in the admin dashboard.</p>
@@ -240,12 +240,27 @@ exports.confirmPayment = async (req, res) => {
 
     await sendUserEmail(
       req.user.email,
-      "Your Payment was Successful ✅",
-      `
-      <h2>Thank you for your purchase!</h2>
-      <p>Your order <strong>${order._id}</strong> has been completed successfully.</p>
-      <p>Total Paid: ${order.totalPrice} EGP</p>
-    `
+     "Your Payment was Successful ✅",
+  `
+  <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+    <h2 style="color: #2e6da4;">Thank you for your purchase, ${firstName}!</h2>
+    <p>We have received your payment and your order has been processed successfully.</p>
+
+    <hr style="border: 0; height: 1px; background: #ddd; margin: 20px 0;">
+
+    <p><strong>Order ID:</strong> ${order._id}</p>
+    <p><strong>Total Paid:</strong> ${order.totalPrice} EGP</p>
+    <p><strong>Payment Status:</strong> Completed ✅</p>
+
+    <hr style="border: 0; height: 1px; background: #ddd; margin: 20px 0;">
+
+    <p>If you have any questions or concerns, feel free to reach out to us at <a href="mailto:${process.env.ADMIN_EMAIL}">${process.env.ADMIN_EMAIL}</a>.</p>
+    
+    <p style="margin-top: 30px;">Best regards,<br><strong>The Bookstore Team</strong></p>
+
+    <p style="font-size: 12px; color: #999;">This message was sent to: <strong>${req.user.email}</strong></p>
+  </div>
+  `
     );
 
     res.json({ success: true });

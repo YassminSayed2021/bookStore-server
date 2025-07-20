@@ -74,6 +74,9 @@ statusHistory: [
 
 }, { timestamps: true });
 
+
+orderSchema.index({ "shippingAddress.location": "2dsphere" });
+
 const Order = mongoose.model("Order", orderSchema);
 module.exports = Order;
 
