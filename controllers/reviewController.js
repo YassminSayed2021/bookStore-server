@@ -4,82 +4,123 @@ const User = require("../models/usersModel");
 const Order = require("../models/ordersModel");
 const { isValidObjectId } = require("mongoose");
 const { validationResult, body } = require("express-validator");
+const Filter = require('bad-words');
 
 
 
-const getReviews = async(req , res)=>{
-try{
-const reviews = await Review.find({},{review:1, rating:1, _id:0}) .populate({
+function isSpamReview(text) {
+  const spamWords = ["buy now", "limited offer", "click here", "guaranteed", "free"];
+  const lowerText = text.toLowerCase();
+  const exclamations = (text.match(/!/g) || []).length;
+
+  return (
+    spamWords.some(word => lowerText.includes(word)) ||
+    exclamations > 3 ||
+    text.length < 10
+  );
+}
+
+
+
+
+
+const getReviews = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    const reviews = await Review.find()
+      .populate({
         path: 'user',
-        select: 'firstName lastName ' 
-      }).populate({ path: 'book', select: 'title -_id' })
-;
-res.status(200).json({
-    status:"success",
-    message: "Reviews fetched successfully",
-    data:reviews
-})
-}catch(err){
-        res.status(500).json({
-                    status: "Failure",
-            message:"Internal Server Error",
-            error: err
-    });
-}
-}
-//
-const getBookReviews = async(req,res)=>{
-try{
-const {slug} = req.params;
-   
+        select: 'firstName lastName',
+      })
+      .populate({
+        path: 'book',
+        select: 'title slug',
+      })
+      .skip(skip)
+      .limit(Number(limit));
 
-    
-    const existingBook = await Book.findOne({slug});
+    const filteredReviews = reviews.filter(
+      (review) => review.user !== null && review.book !== null
+    );
+
+    res.status(200).json({
+      status: "Success",
+      message: "Reviews fetched successfully",
+      data: filteredReviews,
+      count: filteredReviews.length,
+      page: Number(page),
+      limit: Number(limit)
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "Failure",
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
+//
+const getBookReviews = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const existingBook = await Book.findOne({ slug });
+
     if (!existingBook) {
       return res.status(404).json({
         status: "Failure",
         message: "Book not found",
       });
     }
+
     const bookId = existingBook._id;
 
-     if (!isValidObjectId(bookId)) {
+    if (!isValidObjectId(bookId)) {
       return res.status(400).json({
         status: "Failure",
         message: "Invalid book ID format",
       });
     }
 
-const BookReviews = await Review.find({book:bookId},{review:1, rating:1, _id:0}).populate({
-    path: "user",
-    select:"firstName lastName"
-});
-    if (BookReviews.length === 0) {
-      return res.status(200).json({
-        status: "Success",
-        message: "No reviews yet for this book.",
-        data: [],
-        count: 0
-      });
-    }
+    const totalReviews = await Review.countDocuments({ book: bookId });
 
-res.status(200).json({
-    status:"Success",
-    message:"Book Reviews Fetched Successfully",
-    data: BookReviews,
+    const BookReviews = await Review.find({ book: bookId }, { review: 1, rating: 1 })
+      .populate({
+        path: "user",
+        select: "firstName lastName _id", 
+      })
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }) 
+      .lean();
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Book Reviews Fetched Successfully",
+      data: BookReviews,
       count: BookReviews.length,
-
-})
-}catch(err){
-    
-        res.status(500).json({
-                    status: "Failure",
-            message:"Internal Server Error",
-            error: err
+      total: totalReviews,
+      page,
+      pages: Math.ceil(totalReviews / limit),
+      book: {
+        _id: existingBook._id,
+        title: existingBook.title,
+        slug: existingBook.slug,
+      },
     });
-
-}
-}
+  } catch (err) {
+    return res.status(500).json({
+      status: "Failure",
+      message: "Internal Server Error",
+      error: err.message,
+    });
+  }
+};
 //
 const submitReview = async(req, res)=>{
 
@@ -97,6 +138,7 @@ const submitReview = async(req, res)=>{
 
     try{
     const data = req.body;
+
     const { slug } = req.params;
 const userData = await User.findOne({ email: req.user.email });
 
@@ -155,6 +197,23 @@ const userId = userData._id;
       });
     }
 
+    const filter = new Filter();
+
+if (filter.isProfane(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review contains inappropriate language.",
+  });
+}
+
+if (isSpamReview(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review appears to be spammy or too short.",
+  });
+}
+
+
     const newReview = await Review.create({
       user: userId,
       book: bookId,
@@ -194,6 +253,24 @@ const updateReview = async(req,res)=>{
 try{
 const {slug} = req.params;
 const data = req.body;
+
+
+const filter = new Filter();
+
+if (filter.isProfane(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review contains inappropriate language.",
+  });
+}
+
+if (isSpamReview(data.review)) {
+  return res.status(400).json({
+    status: "Failure",
+    message: "Your review appears to be spammy or too short.",
+  });
+}
+
 
     const userData = await User.findOne({ email: req.user.email });
     if (!userData) {

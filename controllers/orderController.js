@@ -141,25 +141,77 @@ io.emit("newOrderNotification", {
   }
 };
 
+// const getOrderHistory = async (req, res) => {
+//   try {
+//     const userEmail = req.user.email;
+
+//     const orders = await Order.find()
+//       .populate({
+//         path: "user",
+//         match: { email: userEmail },
+//         select: "firstName email",
+//       })
+//       .populate({
+//         path: "books.book",
+//         select: "title price image",
+//       })
+//       .sort({ createdAt: -1 });
+
+//     const userOrders = orders.filter((order) => order.user);
+
+//     const formatted = userOrders.map((order) => ({
+//       id: order._id,
+//       createdAt: order.createdAt,
+//       status: order.status,
+//       totalPrice: order.totalPrice,
+//       books: order.books.map((item) => ({
+//         title: item.book?.title || "Deleted Book",
+//         image: item.book?.image || "",
+//         price: item.book?.price || 0,
+//         quantity: item.quantity,
+//       })),
+//     }));
+
+//     res.status(200).json({
+//       status: "Success",
+//       count: formatted.length,
+//       data: formatted,
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       status: "Failure",
+//       message: "Error fetching order history",
+//       error: err.message || err,
+//     });
+//   }
+// };
+
+
 const getOrderHistory = async (req, res) => {
   try {
     const userEmail = req.user.email;
 
-    const orders = await Order.find()
-      .populate({
-        path: "user",
-        match: { email: userEmail },
-        select: "firstName email",
-      })
+    const user = await User.findOne({ email: userEmail });
+    if (!user) {
+      return res.status(404).json({ status: "Failure", message: "User not found" });
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalOrders = await Order.countDocuments({ user: user._id });
+
+    const orders = await Order.find({ user: user._id })
       .populate({
         path: "books.book",
         select: "title price image",
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    const userOrders = orders.filter((order) => order.user);
-
-    const formatted = userOrders.map((order) => ({
+    const formatted = orders.map((order) => ({
       id: order._id,
       createdAt: order.createdAt,
       status: order.status,
@@ -174,9 +226,14 @@ const getOrderHistory = async (req, res) => {
 
     res.status(200).json({
       status: "Success",
+      page,
+      limit,
+      totalOrders,
+      totalPages: Math.ceil(totalOrders / limit),
       count: formatted.length,
       data: formatted,
     });
+
   } catch (err) {
     res.status(500).json({
       status: "Failure",
@@ -185,6 +242,10 @@ const getOrderHistory = async (req, res) => {
     });
   }
 };
+
+
+
+
 
 // Admin: Get all orders with pagination
 const getAllOrders = async (req, res) => {

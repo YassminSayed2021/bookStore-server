@@ -1,7 +1,12 @@
 require("dotenv").config();
-require('./jobs/clearPendingOrders');
+require("./jobs/clearPendingOrders");
 
 const express = require("express");
+
+
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
+
 
 const mongoose = require("mongoose");
 const morgan = require("morgan");
@@ -9,6 +14,7 @@ const cors = require("cors");
 const http = require("http");             
 const socketIo = require("socket.io");      
 const preWarmHomepageCache = require("./utils/prewarmCache");
+
 
 
 // Custom Modules
@@ -41,16 +47,17 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const app = express();
 //socket
 const server = http.createServer(app);
-const io = socketIo(server,{
+const io = socketIo(server, {
   cors: {
     origin: "http://localhost:4200",
-    methods:["GET","POST"],
-    credentials:true
-  }
-
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
 app.locals.io = io;
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // ======= MIDDLEWARES =======
 app.use(requestLogger); // Custom request logger
@@ -65,7 +72,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-
 // User and Auth
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/auth", authRoutes);
@@ -79,7 +85,7 @@ app.use("/api/v1/bookmang", bookManagementRoutes);
 
 // Book, Review & Category
 app.use("/api/v1/books", booksRoutes);
-app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/review", reviewRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 
 // Orders, Payment
@@ -95,26 +101,23 @@ app.use("/api/v1/wishList", wishListRoutes);
 const bestsellersRoutes = require("./routes/bestsellersRoutes");
 app.use("/api/v1/bestsellers", bestsellersRoutes);
 
-
 //chatbot
 const chatbotRoutes = require("./routes/chatbotRoutes");
 app.use("/chatbot", chatbotRoutes);
 
-
 // Search
-app.use("/api/v1", searchRoutes);
+app.use("/api/v1/search", searchRoutes);
 
 //test socket
-app.get('/test-socket', (req, res)=> {
+app.get("/test-socket", (req, res) => {
   const io = req.app.locals.io;
-console.log("🔥 Sending test WebSocket notification");
-io.emit('newOrderNotification',{
-  test: 'This is a test notification',
-  timestamp: new Date().toISOString()
+  console.log("🔥 Sending test WebSocket notification");
+  io.emit("newOrderNotification", {
+    test: "This is a test notification",
+    timestamp: new Date().toISOString(),
+  });
+  res.send("Test WebSocket notification sent");
 });
-  res.send('Test WebSocket notification sent');
-})
-
 
 // Global Error Handler
 app.use(errorHandler);
@@ -122,22 +125,18 @@ app.use(errorHandler);
 //========== WebSocket Events ==============
 
 io.on("connection", (socket) => {
-    console.log("✅ Admin connected via WebSocket:", socket.id);
+  console.log("✅ Admin connected via WebSocket:", socket.id);
 
-socket.on("disconnect", ()=>{
+  socket.on("disconnect", () => {
     console.log("❌ Admin disconnected:", socket.id);
-});
-
+  });
 });
 
 // ======= SERVER =======
 const PORT = process.env.DB_PORT || 3000;
 
 server.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-
-// app.listen(PORT, async () => {
-//   console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 
   await connectDB();
   // Prewarm homepage cache
