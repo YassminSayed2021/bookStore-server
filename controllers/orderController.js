@@ -5,18 +5,15 @@ const Order = require("../models/ordersModel");
 const User = require("../models/usersModel");
 const OrderConfirmationEmail = require("../utils/orderConfirmationEmail");
 
-
 const placeOrder = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     const userEmail = req.user.email;
     //Log user email
-    console.log("User email:", userEmail);
+    //console.log("User email:", userEmail);
     const user = await User.findOne({ email: userEmail });
     if (!user) {
-      
-
       await session.abortTransaction();
       return res.status(404).json({
         status: "Failure",
@@ -26,8 +23,6 @@ const placeOrder = async (req, res) => {
 
     const cartItems = await CartItem.find({ user: user._id }).populate("book");
     if (cartItems.length === 0) {
-
-
       await session.abortTransaction();
       return res.status(400).json({
         status: "Failure",
@@ -41,9 +36,7 @@ const placeOrder = async (req, res) => {
     for (const item of cartItems) {
       const { book, quantity, language } = item;
 
-
       const stock = book.stock?.[language];
-
 
       if (stock === undefined) {
         await session.abortTransaction();
@@ -53,7 +46,6 @@ const placeOrder = async (req, res) => {
         });
       }
 
-
       if (quantity > stock) {
         await session.abortTransaction();
         return res.status(400).json({
@@ -61,7 +53,6 @@ const placeOrder = async (req, res) => {
           message: `Only ${stock} left in stock for ${book.title}`,
         });
       }
-
 
       book.stock[language] -= quantity;
       await book.save({ session });
@@ -74,14 +65,13 @@ const placeOrder = async (req, res) => {
       });
     }
 
-
     const newOrder = await Order.create(
       [
         {
           user: user._id,
           books: orderBooks,
           totalPrice,
-          paymentMethod: 'paypal',
+          paymentMethod: "paypal",
         },
       ],
       { session }
@@ -91,12 +81,9 @@ const placeOrder = async (req, res) => {
 
     await session.commitTransaction();
 
-
     // await OrderConfirmationEmail(user.email, user.firstName, newOrder[0]._id, totalPrice);
     const orderedBooks = cartItems.map((item) => ({
- 
-
- title: item.book.title,
+      title: item.book.title,
       quantity: item.quantity,
     }));
 
@@ -108,20 +95,19 @@ const placeOrder = async (req, res) => {
       orderedBooks
     );
 
-//notification to the admin using WebSocket
-const io = req.app.locals.io;
-console.log("🔥🔥🔥 About to emit socket from placeOrder()");
+    //notification to the admin using WebSocket
+    const io = req.app.locals.io;
+    //console.log("🔥🔥🔥 About to emit socket from placeOrder()");
 
-io.emit("newOrderNotification", {
-  user:{
-    name:user.firstName,
-    email:user.email
-  },
-  orderId: newOrder[0]._id,
-  totalPrice,
-  orderedBooks
-});
-
+    io.emit("newOrderNotification", {
+      user: {
+        name: user.firstName,
+        email: user.email,
+      },
+      orderId: newOrder[0]._id,
+      totalPrice,
+      orderedBooks,
+    });
 
     session.endSession();
 
@@ -186,14 +172,15 @@ io.emit("newOrderNotification", {
 //   }
 // };
 
-
 const getOrderHistory = async (req, res) => {
   try {
     const userEmail = req.user.email;
 
     const user = await User.findOne({ email: userEmail });
     if (!user) {
-      return res.status(404).json({ status: "Failure", message: "User not found" });
+      return res
+        .status(404)
+        .json({ status: "Failure", message: "User not found" });
     }
 
     const page = parseInt(req.query.page) || 1;
@@ -233,7 +220,6 @@ const getOrderHistory = async (req, res) => {
       count: formatted.length,
       data: formatted,
     });
-
   } catch (err) {
     res.status(500).json({
       status: "Failure",
@@ -242,10 +228,6 @@ const getOrderHistory = async (req, res) => {
     });
   }
 };
-
-
-
-
 
 // Admin: Get all orders with pagination
 const getAllOrders = async (req, res) => {
@@ -256,7 +238,7 @@ const getAllOrders = async (req, res) => {
 
     // Build query object based on filters
     const query = {};
-    
+
     // Add status filter if provided
     if (req.query.status) {
       query.status = req.query.status;
@@ -382,7 +364,15 @@ const updateOrderStatus = async (req, res) => {
 
     // Validate status
 
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed','paid'];
+    const validStatuses = [
+      "pending",
+      "processing",
+      "shipped",
+      "delivered",
+      "cancelled",
+      "completed",
+      "paid",
+    ];
 
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
