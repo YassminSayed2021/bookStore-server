@@ -154,12 +154,10 @@ const requestPasswordReset = async (req, res) => {
       createdAt: -1,
     });
     if (previousOtp && Date.now() - previousOtp.createdAt < 60 * 1000) {
-      return res
-        .status(429)
-        .json({
-          success: false,
-          message: "Please wait before requesting another OTP.",
-        });
+      return res.status(429).json({
+        success: false,
+        message: "Please wait before requesting another OTP.",
+      });
     }
 
     // Generate and hash OTP
@@ -184,13 +182,11 @@ const requestPasswordReset = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in requestPasswordReset:", error.message);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 

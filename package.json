@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "esbuild src/index.js --bundle --platform=node --outfile=dist/bundle.js"
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +20,7 @@
     "bcrypt": "^6.0.0",
     "body-parser": "^2.2.0",
     "cloudinary": "^2.7.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "cros": "^1.1.0",
     "express": "^5.1.0",
@@ -45,7 +47,11 @@
   },
   "devDependencies": {
     "dotenv": "^16.6.1",
+    "esbuild": "^0.25.8",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=10.0.0"
   }
 }
