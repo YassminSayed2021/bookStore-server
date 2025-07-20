@@ -91,7 +91,7 @@ app.use("/api/v1/categories", categoryRoutes);
 // Orders, Payment
 app.use("/api/v1/orders", ordersRoutes);
 app.use("/api/v1/paypal", paypalRoutes);
-app.use("/api/payment", paymentStripe); // Uncomment when needed
+app.use("/api/v1/payment", paymentStripe); // Uncomment when needed
 
 // Cart, Wishlist, Upload
 app.use("/api/v1/cart", cartRoutes);
