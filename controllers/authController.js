@@ -314,16 +314,18 @@ const googleLogin = async (req, res) => {
         email,
         firstName: firstName || "GoogleUser",
         lastName: lastName || "",
-        password: "",
         isGoogleUser: true,
+        role: "user",
       });
     }
 
-    const tokenRes = jwt.sign(
-      { id: user._id, name: user.name, role: user.role },
-      process.env.TOKEN_SECRET,
-      { expiresIn: "1800s" }
-    );
+ const tokenRes = generateAccessToken({
+  id: user._id,
+  name: `${user.firstName} ${user.lastName}`.trim(),
+  email: user.email,
+  role: user.role,
+});
+
 
     res.status(200).json({
       success: true,
