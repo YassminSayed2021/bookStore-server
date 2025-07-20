@@ -2,10 +2,14 @@ const cron = require('node-cron');
 const Order = require('../models/ordersModel');
 const Book = require('../models/booksModel');
 
-cron.schedule('0 * * * *', async () => {
+ cron.schedule('0 * * * *', async () => {
+  // cron.schedule('*/5 * * * *', async () => {
+
   console.log('[CRON] Job started');
 
-  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+   const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // const oneDayAgo = new Date(Date.now() - 5 * 60 * 1000); // 5 minutes ago
+
 
   const oldPendingOrders = await Order.find({
     status: 'pending',
