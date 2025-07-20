@@ -295,8 +295,6 @@ const googleLogin = async (req, res) => {
   try {
     const { token } = req.body;
 
-    
-
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -320,12 +318,18 @@ const googleLogin = async (req, res) => {
         email,
         firstName: firstName || "GoogleUser",
         lastName: lastName || "",
-        password: "", 
         isGoogleUser: true,
+        role: "user",
       });
     }
 
-    const tokenRes = jwt.sign({ id: user._id,name:user.name, role: user.role, }, process.env.TOKEN_SECRET, {expiresIn: "1800s",});
+ const tokenRes = generateAccessToken({
+  id: user._id,
+  name: `${user.firstName} ${user.lastName}`.trim(),
+  email: user.email,
+  role: user.role,
+});
+
 
     res.status(200).json({
       success: true,
@@ -336,13 +340,11 @@ const googleLogin = async (req, res) => {
   } catch (error) {
     console.error("Google login error:", error.message);
     console.error(error.stack);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Google login failed",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Google login failed",
+      error: error.message,
+    });
   }
 };
 
