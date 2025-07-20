@@ -14,10 +14,11 @@ const validateCategory = [
     .isLength({ min: 2, max: 50 })
     .withMessage("Category name must be between 2 and 50 characters"),
   body("description")
-    .optional()
+    .notEmpty()
+    .withMessage("Description is required")
     .trim()
-    .isLength({ max: 500 })
-    .withMessage("Description must be less than 500 characters")
+    .isLength({ min: 10, max: 500 })
+    .withMessage("Description must be between 10 and 500 characters")
 ];
 
 // Public route - Get all categories
@@ -34,4 +35,4 @@ router.delete("/:id", verifyToken, admin, categoryController.deleteCategory);
 // Generic route for ID or slug - MUST come after more specific routes
 router.get("/:id", categoryController.getCategoryById);
 
-module.exports = router; 
+module.exports = router;

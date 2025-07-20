@@ -4,6 +4,7 @@ const router = express.Router();
 const upload = require("../middlewares/upload");
 const { verifyToken } = require("../middlewares/verifyToken");
 const { admin } = require("../middlewares/admin");
+const validateIBook = require("../middlewares/validateIBook");
 const {
   getAllBooks,
   createBook,
@@ -14,10 +15,10 @@ const {
 } = require("../controllers/bookManagementController");
 
 // Create a new book
-router.post("/", verifyToken, admin, upload.single("image"), createBook);
+router.post("/", verifyToken, admin, validateIBook, upload.single("image"), createBook);
 
 // Update a book - support both ID and slug
-router.put("/:id", verifyToken, admin, upload.single("image"), updateBook);
+router.put("/:id", verifyToken, admin, validateIBook, upload.single("image"), updateBook);
 
 // Delete a book - support both ID and slug
 router.delete("/:id", verifyToken, admin, deleteBook);

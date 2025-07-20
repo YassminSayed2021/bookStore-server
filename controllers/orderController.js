@@ -254,10 +254,18 @@ const getAllOrders = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const totalOrders = await Order.countDocuments();
+    // Build query object based on filters
+    const query = {};
+    
+    // Add status filter if provided
+    if (req.query.status) {
+      query.status = req.query.status;
+    }
+
+    const totalOrders = await Order.countDocuments(query);
     const totalPages = Math.ceil(totalOrders / limit);
 
-    const orders = await Order.find()
+    const orders = await Order.find(query)
       .populate({
         path: "user",
         select: "firstName lastName email",
