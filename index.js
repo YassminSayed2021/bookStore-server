@@ -8,6 +8,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 const http = require("http");             
 const socketIo = require("socket.io");      
+const preWarmHomepageCache = require("./utils/prewarmCache");
 
 
 // Custom Modules
@@ -26,7 +27,6 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const ordersRoutes = require("./routes/ordersRoutes");
 const adminOrderRoutes = require("./routes/adminOrderRoutes");
 const adminReviewRoutes = require("./routes/adminReviewRoutes");
-const settingsRoutes = require("./routes/settingsRoutes");
 const paypalRoutes = require("./routes/paypalRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const wishListRoutes = require("./routes/wishListRoutes");
@@ -58,12 +58,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-app.use(
-  cors({
-    origin: ["http://localhost:4200"],
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: ["http://localhost:4200"],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 
 // User and Auth
@@ -74,7 +74,6 @@ app.use("/api/v1/otp", otpRoutes);
 //Admin
 app.use("/api/v1/admin/orders", adminOrderRoutes);
 app.use("/api/v1/admin/reviews", adminReviewRoutes);
-app.use("/api/v1/admin/settings", settingsRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/bookmang", bookManagementRoutes);
 
@@ -89,8 +88,8 @@ app.use("/api/v1/paypal", paypalRoutes);
 app.use("/api/payment", paymentStripe); // Uncomment when needed
 
 // Cart, Wishlist, Upload
-app.use("/api/cart", cartRoutes);
-app.use("/api/wishList", wishListRoutes);
+app.use("/api/v1/cart", cartRoutes);
+app.use("/api/v1/wishList", wishListRoutes);
 // app.use("/api/cloud", uploadRoute);
 // ===================
 const bestsellersRoutes = require("./routes/bestsellersRoutes");
@@ -141,4 +140,6 @@ server.listen(PORT, async () => {
 //   console.log(`Server running on port ${PORT}`);
 
   await connectDB();
+  // Prewarm homepage cache
+  await preWarmHomepageCache();
 });

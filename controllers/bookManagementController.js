@@ -1,6 +1,7 @@
 const Book = require("../models/booksModel");
 const slugify = require("slugify");
 const cloudinary = require("../utils/cloudinary");
+const cache = require("../utils/cache");
 
 //const { extractTextFromImage } = require("../utils/vision");
 
@@ -9,18 +10,43 @@ const getAllBooks = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
+    const search = req.query.search || '';
+    const category = req.query.category || '';
 
-    // Count total books for pagination
-    const totalBooks = await Book.countDocuments();
+    // Build search condition
+    let searchCondition = {};
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      searchCondition = {
+        $or: [
+          { title: regex },
+          { author: regex },
+          { description: regex },
+          { 'category.name': regex }
+        ]
+      };
+    }
+    if (category) {
+      // If search is also present, combine with $and
+      const categoryCond = { 'category.name': { $regex: new RegExp(`^${category}$`, 'i') } };
+      if (Object.keys(searchCondition).length > 0) {
+        searchCondition = { $and: [searchCondition, categoryCond] };
+      } else {
+        searchCondition = categoryCond;
+      }
+    }
 
-    // Get books with pagination
-    const books = await Book.find()
-      .populate("user", "name")
+    // Count total books for pagination (with search)
+    const totalBooks = await Book.countDocuments(searchCondition);
+
+    // Get books with pagination (with search)
+    const books = await Book.find(searchCondition)
+      .populate('user', 'name')
       .skip(skip)
       .limit(limit);
 
     res.status(200).json({
-      status: "success",
+      status: 'success',
       page,
       totalPages: Math.ceil(totalBooks / limit),
       totalItems: totalBooks,
@@ -29,73 +55,13 @@ const getAllBooks = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({
-      status: "fail",
-      message: "Error fetching books",
+      status: 'fail',
+      message: 'Error fetching books',
       error: err.message,
     });
   }
 };
 
-// const createBook = async (req, res) => {
-//   try {
-//     const {
-//       title,
-//       category,
-//       author,
-//       authorDescription,
-//       price,
-//       description,
-//       stockAr,
-//       stockEn,
-//       stockFr,
-//     } = req.body;
-
-//     let imageUrl = null;
-
-//     // Upload to Cloudinary
-//     if (req.file) {
-//       const result = await new Promise((resolve, reject) => {
-//         const stream = cloudinary.uploader.upload_stream(
-//           { folder: "bookStore" },
-//           (error, result) => {
-//             if (error) reject(error);
-//             else resolve(result);
-//           }
-//         );
-//         stream.end(req.file.buffer);
-//       });
-
-//       imageUrl = result.secure_url;
-//     }
-
-//     const newBook = await Book.create({
-//       title,
-//       category,
-//       author,
-//       authorDescription,
-//       price,
-//       description,
-//       stock: {
-//         ar: parseInt(stockAr) || 0,
-//         en: parseInt(stockEn) || 0,
-//         fr: parseInt(stockFr) || 0,
-//       },
-//       image: imageUrl,
-//       user: req.user.id,
-//     });
-
-//     res.status(201).json({
-//       status: "success",
-//       data: newBook,
-//     });
-//   } catch (err) {
-//     res.status(400).json({
-//       status: "fail",
-//       message: "Book creation failed",
-//       error: err.message,
-//     });
-//   }
-// };
 
 const createBook = async (req, res) => {
   try {
@@ -194,8 +160,17 @@ const createBook = async (req, res) => {
 
     res.status(201).json({
       status: "success",
-      message: "Book created successfully.",
+      message: "Book added successfully.",
       data: newBook,
+    });
+    
+    // Invalidate any book caches since we've added a new book
+    // This should happen after the response is sent to avoid delaying the response
+    process.nextTick(() => {
+      if (newBook.category && newBook.category.name) {
+        cache.invalidateGenreCache(newBook.category.name);
+      }
+      cache.invalidateBookCaches();
     });
   } catch (err) {
     console.error("Book creation error:", err);
@@ -207,49 +182,6 @@ const createBook = async (req, res) => {
   }
 };
 
-// UPDATE BOOK
-// const updateBook = async (req, res) => {
-//   try {
-//     console.log("Decoded user from token:", req.user);
-
-//     const { id } = req.params;
-//     const updatedData = req.body;
-
-//     if (!updatedData.title || !updatedData.price) {
-//       return res.status(400).json({
-//         status: "fail",
-//         message: "title and price are required.",
-//       });
-//     }
-
-//     updatedData.slug = slugify(updatedData.title, { lower: true });
-//     updatedData.user = req.user.id;
-
-//     const updatedBook = await Book.findByIdAndUpdate(id, updatedData, {
-//       new: true,
-//       runValidators: true
-//     });
-
-//     if (!updatedBook) {
-//       return res.status(404).json({
-//         status: "fail",
-//         message: "Book not found.",
-//       });
-//     }
-
-//     res.status(200).json({
-//       status: "success",
-//       message: "Book updated successfully.",
-//       data: { updatedBook },
-//     });
-//   } catch (error) {
-//     console.error("PUT update failed:", error);
-//     res.status(500).json({
-//       status: "error",
-//       message: "Server error.",
-//     });
-//   }
-// };
 
 const updateBook = async (req, res) => {
   try {
@@ -378,6 +310,15 @@ const updateBook = async (req, res) => {
       message: "Book updated successfully.",
       data: updatedBook,
     });
+    
+    // Invalidate any book caches since we've updated a book
+    // This should happen after the response is sent to avoid delaying the response
+    process.nextTick(() => {
+      if (updatedBook.category && updatedBook.category.name) {
+        cache.invalidateGenreCache(updatedBook.category.name);
+      }
+      cache.invalidateBookCaches();
+    });
   } catch (err) {
     console.error("Update failed:", err);
     res.status(500).json({
@@ -416,6 +357,15 @@ const deleteBook = async (req, res) => {
     res.status(204).json({
       status: "success",
       data: null,
+    });
+    
+    // Invalidate any book caches since we've deleted a book
+    // This should happen after the response is sent to avoid delaying the response
+    process.nextTick(() => {
+      if (deletedBook.category && deletedBook.category.name) {
+        cache.invalidateGenreCache(deletedBook.category.name);
+      }
+      cache.invalidateBookCaches();
     });
   } catch (err) {
     console.error("DELETE failed:", err);

@@ -1,6 +1,7 @@
 const Category = require('../models/categoryModel');
 const { validationResult } = require('express-validator');
 const { isValidObjectId } = require('mongoose');
+const cache = require('../utils/cache');
 
 // Get all categories
 const getAllCategories = async (req, res) => {
@@ -149,6 +150,11 @@ const createCategory = async (req, res) => {
       message: "Category created successfully",
       data: newCategory
     });
+    
+    // Invalidate book caches since a new category could affect filtering
+    process.nextTick(() => {
+      cache.invalidateBookCaches();
+    });
   } catch (error) {
     console.error("❌ Category creation failed:", error);
     res.status(500).json({
@@ -212,6 +218,14 @@ const updateCategory = async (req, res) => {
       message: "Category updated successfully",
       data: category
     });
+    
+    // Invalidate specific genre cache and general book caches
+    process.nextTick(() => {
+      if (category.name) {
+        cache.invalidateGenreCache(category.name);
+      }
+      cache.invalidateBookCaches();
+    });
   } catch (error) {
     res.status(500).json({
       status: "Failure",
@@ -265,6 +279,14 @@ const deleteCategory = async (req, res) => {
     res.status(200).json({
       status: "Success",
       message: "Category deleted successfully"
+    });
+    
+    // Invalidate specific genre cache and general book caches
+    process.nextTick(() => {
+      if (category.name) {
+        cache.invalidateGenreCache(category.name);
+      }
+      cache.invalidateBookCaches();
     });
   } catch (error) {
     res.status(500).json({
