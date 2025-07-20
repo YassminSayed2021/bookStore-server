@@ -481,44 +481,44 @@ const getReviewById = async (req, res) => {
 };
 
 // Admin: Update review status (e.g., approve/reject)
-const updateReviewStatus = async (req, res) => {
-  try {
-    const reviewId = req.params.id;
-    const { status } = req.body;
+// const updateReviewStatus = async (req, res) => {
+//   try {
+//     const reviewId = req.params.id;
+//     const { status } = req.body;
     
-    if (!status || !['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({
-        status: "Failure",
-        message: "Invalid status value. Must be 'approved' or 'rejected'."
-      });
-    }
+//     if (!status || !['approved', 'rejected'].includes(status)) {
+//       return res.status(400).json({
+//         status: "Failure",
+//         message: "Invalid status value. Must be 'approved' or 'rejected'."
+//       });
+//     }
     
-    const review = await Review.findByIdAndUpdate(
-      reviewId,
-      { status },
-      { new: true }
-    );
+//     const review = await Review.findByIdAndUpdate(
+//       reviewId,
+//       { status },
+//       { new: true }
+//     );
     
-    if (!review) {
-      return res.status(404).json({
-        status: "Failure",
-        message: "Review not found"
-      });
-    }
+//     if (!review) {
+//       return res.status(404).json({
+//         status: "Failure",
+//         message: "Review not found"
+//       });
+//     }
     
-    res.status(200).json({
-      status: "Success",
-      message: `Review ${status} successfully`,
-      data: review
-    });
-  } catch (err) {
-    res.status(500).json({
-      status: "Failure",
-      message: "Error updating review status",
-      error: err.message || err
-    });
-  }
-};
+//     res.status(200).json({
+//       status: "Success",
+//       message: `Review ${status} successfully`,
+//       data: review
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       status: "Failure",
+//       message: "Error updating review status",
+//       error: err.message || err
+//     });
+//   }
+// };
 
 // Admin: Delete review
 const deleteReviewByAdmin = async (req, res) => {
@@ -557,6 +557,6 @@ module.exports = {
   // Admin methods
   getAllReviews,
   getReviewById,
-  updateReviewStatus,
+  //updateReviewStatus,
   deleteReviewByAdmin
 };

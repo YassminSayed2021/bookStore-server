@@ -295,8 +295,7 @@ const googleLogin = async (req, res) => {
   try {
     const { token } = req.body;
 
-    console.log("Received token:", token);
-    console.log("Client ID from .env:", process.env.GOOGLE_CLIENT_ID);
+    
 
     const ticket = await client.verifyIdToken({
       idToken: token,
