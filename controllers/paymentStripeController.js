@@ -37,7 +37,7 @@ const notifyAdmin = async (order) => {
 };
 
 exports.createCheckout = async (req, res) => {
-  console.log("📥 Received body:", req.body);
+  //console.log("📥 Received body:", req.body);
   const { productId, quantity, amount, cartItems, language } = req.body;
   const userId = req.user.id;
   const email = req.user.email;
@@ -199,11 +199,9 @@ exports.confirmPayment = async (req, res) => {
         book.stock[orderBook.language || "ar"] < orderBook.quantity
       ) {
         await session.abortTransaction();
-        return res
-          .status(400)
-          .json({
-            error: `Stock no longer available for ${book?.title || "Unknown"}`,
-          });
+        return res.status(400).json({
+          error: `Stock no longer available for ${book?.title || "Unknown"}`,
+        });
       }
 
       book.stock[orderBook.language || "ar"] -= orderBook.quantity;

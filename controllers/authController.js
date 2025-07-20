@@ -154,12 +154,10 @@ const requestPasswordReset = async (req, res) => {
       createdAt: -1,
     });
     if (previousOtp && Date.now() - previousOtp.createdAt < 60 * 1000) {
-      return res
-        .status(429)
-        .json({
-          success: false,
-          message: "Please wait before requesting another OTP.",
-        });
+      return res.status(429).json({
+        success: false,
+        message: "Please wait before requesting another OTP.",
+      });
     }
 
     // Generate and hash OTP
@@ -184,13 +182,11 @@ const requestPasswordReset = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in requestPasswordReset:", error.message);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Internal server error",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -295,9 +291,6 @@ const googleLogin = async (req, res) => {
   try {
     const { token } = req.body;
 
-    console.log("Received token:", token);
-    console.log("Client ID from .env:", process.env.GOOGLE_CLIENT_ID);
-
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -321,12 +314,16 @@ const googleLogin = async (req, res) => {
         email,
         firstName: firstName || "GoogleUser",
         lastName: lastName || "",
-        password: "", 
+        password: "",
         isGoogleUser: true,
       });
     }
 
-    const tokenRes = jwt.sign({ id: user._id,name:user.name, role: user.role, }, process.env.TOKEN_SECRET, {expiresIn: "1800s",});
+    const tokenRes = jwt.sign(
+      { id: user._id, name: user.name, role: user.role },
+      process.env.TOKEN_SECRET,
+      { expiresIn: "1800s" }
+    );
 
     res.status(200).json({
       success: true,
@@ -337,13 +334,11 @@ const googleLogin = async (req, res) => {
   } catch (error) {
     console.error("Google login error:", error.message);
     console.error(error.stack);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Google login failed",
-        error: error.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Google login failed",
+      error: error.message,
+    });
   }
 };
 
