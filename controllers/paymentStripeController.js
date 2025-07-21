@@ -28,7 +28,7 @@ const notifyAdmin = async (order) => {
   const html = `
     <h2>New Order Notification</h2>
     <p><strong>Order ID:</strong> ${order._id}</p>
-    <p><strong>User:</strong> ${firstName}</p>
+    <p><strong>User:</strong> ${order.user}</p>
     <p><strong>Total:</strong> ${order.totalPrice} EGP</p>
       <p><strong>Status:</strong> ${order.status}</p>
     <p>View the order in the admin dashboard.</p>
@@ -243,7 +243,7 @@ exports.confirmPayment = async (req, res) => {
      "Your Payment was Successful ✅",
   `
   <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-    <h2 style="color: #2e6da4;">Thank you for your purchase, ${firstName}!</h2>
+    <h2 style="color: #2e6da4;">Thank you for your purchase, ${order.user.name}!</h2>
     <p>We have received your payment and your order has been processed successfully.</p>
 
     <hr style="border: 0; height: 1px; background: #ddd; margin: 20px 0;">
@@ -258,7 +258,7 @@ exports.confirmPayment = async (req, res) => {
     
     <p style="margin-top: 30px;">Best regards,<br><strong>The Bookstore Team</strong></p>
 
-    <p style="font-size: 12px; color: #999;">This message was sent to: <strong>${req.user.email}</strong></p>
+    <p style="font-size: 12px; color: #999;">This message was sent to: <strong>${req.user.name}</strong></p>
   </div>
   `
     );
