@@ -4,6 +4,7 @@ const Book = require("../models/booksModel");
 const Order = require("../models/ordersModel");
 const User = require("../models/usersModel");
 const OrderConfirmationEmail = require("../utils/orderConfirmationEmail");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY); // Add this at the top with other imports
 
 
 const placeOrder = async (req, res) => {
@@ -109,17 +110,28 @@ const placeOrder = async (req, res) => {
     );
 
 //notification to the admin using WebSocket
+// Add this to the createOrder function or wherever orders are created
 const io = req.app.locals.io;
 console.log("🔥🔥🔥 About to emit socket from placeOrder()");
 
+// Format book details properly for the notification
+const formattedBooks = orderedBooks.map(book => ({
+  title: book.title || 'Unknown Book',
+  quantity: book.quantity || 1,
+  price: book.price || 0
+}));
+
+// Consolidated socket emit - single notification with all data
 io.emit("newOrderNotification", {
-  user:{
-    name:user.firstName,
-    email:user.email
-  },
   orderId: newOrder[0]._id,
-  totalPrice,
-  orderedBooks
+  userName: `${user.firstName} ${user.lastName}`,
+  totalAmount: totalPrice,
+  timestamp: new Date().toISOString(),
+  books: formattedBooks,
+  user: {
+    name: user.firstName,
+    email: user.email
+  }
 });
 
 
@@ -381,7 +393,6 @@ const updateOrderStatus = async (req, res) => {
     }
 
     // Validate status
-
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'completed','paid'];
 
     if (!validStatuses.includes(status)) {
@@ -390,19 +401,71 @@ const updateOrderStatus = async (req, res) => {
         message: "Invalid status value",
       });
     }
-
-    const updatedOrder = await Order.findByIdAndUpdate(
-      orderId,
-      { status },
-      { new: true }
-    );
-
-    if (!updatedOrder) {
+    
+    // Get the current order to check its status
+    const currentOrder = await Order.findById(orderId);
+    
+    if (!currentOrder) {
       return res.status(404).json({
         status: "Failure",
         message: "Order not found",
       });
     }
+    
+    // Prevent any status updates for cancelled orders
+    if (currentOrder.status === 'cancelled') {
+      return res.status(400).json({
+        status: "Failure",
+        message: "Cannot update status of a cancelled order",
+      });
+    }
+    
+    // Prevent cancellation of delivered orders
+    if (status === 'cancelled' && currentOrder.status === 'delivered') {
+      return res.status(400).json({
+        status: "Failure",
+        message: "Cannot cancel an order that has been delivered",
+      });
+    }
+    
+    // Prevent changing from delivered to shipped
+    if (status === 'shipped' && currentOrder.status === 'delivered') {
+      return res.status(400).json({
+        status: "Failure",
+        message: "Cannot change status from delivered to shipped",
+      });
+    }
+    
+    // Process refund if status is being changed to cancelled and there's a payment intent
+    if (status === 'cancelled' && currentOrder.paymentIntentId) {
+      try {
+        // Create refund through Stripe
+        const refund = await stripe.refunds.create({
+          payment_intent: currentOrder.paymentIntentId
+        });
+        
+        console.log(`Refund processed for order ${orderId}: ${refund.status}`);
+        
+        // Add refund information to the order
+        currentOrder.refundStatus = refund.status;
+        currentOrder.refundId = refund.id;
+        currentOrder.refundDate = new Date();
+      } catch (refundError) {
+        console.error('Error processing refund:', refundError);
+        // Continue with status update even if refund fails
+      }
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { 
+        status,
+        ...(currentOrder.refundStatus && { refundStatus: currentOrder.refundStatus }),
+        ...(currentOrder.refundId && { refundId: currentOrder.refundId }),
+        ...(currentOrder.refundDate && { refundDate: currentOrder.refundDate })
+      },
+      { new: true }
+    );
 
     res.status(200).json({
       status: "Success",
